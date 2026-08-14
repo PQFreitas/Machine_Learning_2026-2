@@ -17,6 +17,7 @@ classifiers = [
 ]
 dependencies = [
     "ipython",
+    "ipywidgets>=8.1.8",
     "jupyterlab",
     "loguru",
     "matplotlib",
@@ -24,14 +25,17 @@ dependencies = [
     "notebook",
     "numpy",
     "pandas",
+    "pandera>=0.32.1",
     "pip",
     "pytest",
     "python-dotenv",
     "ruff",
     "scikit-learn",
     "seaborn>=0.13.2",
+    "setuptools<81",
     "tqdm",
     "typer",
+    "ydata-profiling>=4.18.4",
 ]
 requires-python = "~=3.12.0"
 
