@@ -142,7 +142,7 @@ def create_dataset(orders, items, customers):
 
 
     data= data.merge(
-        customers[["customers_id", "customer_city", "customer_state"]],
+        customers[["customer_id", "customer_city", "customer_state"]],
         on="customer_id",
         how="left",
         validate="many_to_one"
