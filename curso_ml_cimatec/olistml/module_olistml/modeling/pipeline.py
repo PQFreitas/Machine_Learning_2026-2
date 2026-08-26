@@ -8,7 +8,7 @@ from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 
 NUMERIC_FEATURES = [
-    "pomised_days",
+    "promised_days",
     "item_count",
     "seller_count",
     "total_price",
@@ -16,10 +16,10 @@ NUMERIC_FEATURES = [
 ]
 
 CATEGORICAL_FEATURES = [
-    "purchace_month",
-    "purchace_weekday",
-    "purchace_hour",
-    "costumer_state",
+    "purchase_month",
+    "purchase_weekday",
+    "purchase_hour",
+    "customer_state",
 ]
 
 def create_preprocessor() -> ColumnTransformer:
