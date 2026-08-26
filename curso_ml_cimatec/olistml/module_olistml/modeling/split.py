@@ -2,15 +2,15 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 FEATURES = [
-    "purchace_hour",
-    "purchace_weekday",
-    "purchace_month",
-    "purchace_days",
+    "purchase_hour",
+    "purchase_weekday",
+    "purchase_month",
+    "promised_days",
     "item_count",
     "seller_count",
     "total_price",
     "total_freight",
-    "costumer_state",
+    "customer_state",
 ]
 
 TARGET = "is_late"
