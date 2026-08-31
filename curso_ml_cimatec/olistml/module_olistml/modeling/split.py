@@ -27,6 +27,3 @@ def split_data(data: pd.DataFrame):
                                                         random_state=42, stratify=y)
     
     return X_train, X_test, y_train, y_test
-
-
-
