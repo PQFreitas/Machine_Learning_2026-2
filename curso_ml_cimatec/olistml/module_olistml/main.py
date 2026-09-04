@@ -2,6 +2,7 @@ from module_olistml.config import RAW_DATA_DIR, INTERIM_DATA_DIR
 
 from module_olistml.dataset import load_data, create_dataset, save_dataset
 from module_olistml.features import create_features
+from module_olistml.modeling.cross_validation import cross_validate_models
 from module_olistml.modeling.split import split_data
 from module_olistml.modeling.train import train_models
 from module_olistml.modeling.evaluate import evaluate_models
@@ -21,6 +22,10 @@ def main():
     
     # Salvando resultado
     save_dataset(data, INTERIM_DATA_DIR / "orders_dataset_refined.csv")
+
+    # Validação cruzada inicial dos modelos
+    cv_results = cross_validate_models(data)
+    logger.info(f"Resultados da validação cruzada: {cv_results}")
 
     # Dividindo o dataset em treino e teste
     X_train, X_test, y_train, y_test = split_data(data)
