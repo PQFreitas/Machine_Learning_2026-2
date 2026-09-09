@@ -26,6 +26,8 @@ from module_olistml.modeling.cross_validation import (
     cross_validate_models,
 )
 
+from module_olistml.modeling.predict import predict
+
 from loguru import logger
 
 
@@ -124,6 +126,26 @@ def main():
         X_test=X_test,
         y_test=y_test,
         threshold=best_threshold,
+    )
+
+    predictions = predict(
+        model=model,
+        X=X_test,
+        threshold=best_threshold,
+    )
+
+    predictions_path = (
+        INTERIM_DATA_DIR
+        / "test_predictions.csv"
+    )
+
+    predictions.to_csv(
+        predictions_path,
+        index=True,
+    )
+
+    logger.success(
+        f"Predições salvas em: {predictions_path}"
     )
 
     logger.success(
