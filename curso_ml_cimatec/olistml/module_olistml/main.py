@@ -28,6 +28,8 @@ from module_olistml.modeling.cross_validation import (
 
 from module_olistml.modeling.predict import predict
 
+from module_olistml.explain import main as explain_model
+
 from loguru import logger
 
 
@@ -147,6 +149,8 @@ def main():
     logger.success(
         f"Predições salvas em: {predictions_path}"
     )
+
+    explain_model()
 
     logger.success(
         "Pipeline executado com sucesso."
