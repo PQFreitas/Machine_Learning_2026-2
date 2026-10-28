@@ -18,6 +18,7 @@ classifiers = [
 dependencies = [
     "ipython",
     "jupyterlab",
+    "keras>=3.12.4",
     "loguru",
     "matplotlib",
     "mkdocs",
@@ -29,6 +30,7 @@ dependencies = [
     "python-dotenv",
     "ruff",
     "scikit-learn",
+    "tensorflow>=2.21.0",
     "tqdm",
     "typer",
 ]
