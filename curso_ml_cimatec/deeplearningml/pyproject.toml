@@ -19,6 +19,7 @@ dependencies = [
     "fg-data-profiling>=4.20.0",
     "ipython",
     "jupyterlab",
+    "keras>=3.12.4",
     "loguru",
     "matplotlib",
     "mkdocs",
