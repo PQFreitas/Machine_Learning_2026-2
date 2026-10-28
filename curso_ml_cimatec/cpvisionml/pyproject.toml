@@ -16,6 +16,7 @@ classifiers = [
     
 ]
 dependencies = [
+    "deepface>=0.0.103",
     "ipython",
     "jupyterlab",
     "keras>=3.12.4",
@@ -31,8 +32,10 @@ dependencies = [
     "ruff",
     "scikit-learn",
     "tensorflow>=2.21.0",
+    "tf-keras>=2.21.0",
     "tqdm",
     "typer",
+    "werkzeug>=3.1.9",
 ]
 requires-python = "~=3.10.0"
 
