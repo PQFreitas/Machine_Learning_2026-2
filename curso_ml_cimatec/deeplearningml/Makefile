@@ -67,6 +67,16 @@ create_environment:
 data: requirements
 	$(PYTHON_INTERPRETER) module_deeplearningml/dataset.py
 
+## Train the heart disease classifier
+.PHONY: train
+train: data
+	$(PYTHON_INTERPRETER) -m module_deeplearningml.modeling.train
+
+## Generate predictions from data/processed/test_features.csv
+.PHONY: predict
+predict:
+	$(PYTHON_INTERPRETER) -m module_deeplearningml.modeling.predict
+
 
 #################################################################################
 # Self Documenting Commands                                                     #

@@ -1,29 +1,30 @@
 from pathlib import Path
 
+import keras
 from loguru import logger
-from tqdm import tqdm
+import pandas as pd
 import typer
 
 from module_deeplearningml.config import MODELS_DIR, PROCESSED_DATA_DIR
+from module_deeplearningml.features import prepare_inputs
 
 app = typer.Typer()
 
 
 @app.command()
 def main(
-    # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
     features_path: Path = PROCESSED_DATA_DIR / "test_features.csv",
-    model_path: Path = MODELS_DIR / "model.pkl",
+    model_path: Path = MODELS_DIR / "heart_classifier.keras",
     predictions_path: Path = PROCESSED_DATA_DIR / "test_predictions.csv",
-    # -----------------------------------------
-):
-    # ---- REPLACE THIS WITH YOUR OWN CODE ----
-    logger.info("Performing inference for model...")
-    for i in tqdm(range(10), total=10):
-        if i == 5:
-            logger.info("Something happened for iteration 5.")
-    logger.success("Inference complete.")
-    # -----------------------------------------
+) -> None:
+    dataframe = pd.read_csv(features_path)
+    inputs = prepare_inputs(dataframe)
+    model = keras.models.load_model(model_path)
+    probabilities = model.predict(inputs, verbose=0).reshape(-1)
+
+    predictions_path.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame({"target_probability": probabilities}).to_csv(predictions_path, index=False)
+    logger.success(f"Predictions saved to {predictions_path}.")
 
 
 if __name__ == "__main__":
