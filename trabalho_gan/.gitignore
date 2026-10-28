@@ -1,0 +1,11 @@
+.venv/
+venv/
+
+# --- Cookiecutter Data Science ---
+.env
+.venv/
+/data/
+/models/*.pt
+/models/*.pth
+__pycache__/
+*.pyc

@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f3efe5">
+<title>VOID/03 Design System</title>
+<!-- preview capture: the Overview frame reports once the page's hero entrance (hero-preload -> hero-enter,
+     1.55 s) has finished; the short extra wait lets the drifting "03" and the stamps settle -->
+<meta name="preview-ready-selector" content="body.ds-overview-ready">
+<meta name="preview-ready-after-ms" content="500">
+<link rel="icon" href="assets/overview/assets/void-03-modular-62.aura.build/favicon.ico">
+<link rel="stylesheet" href="assets/overview/assets/void-03-modular-62.aura.build/fonts.css">
+<link rel="stylesheet" href="assets/overview/assets/void-03-modular-62.aura.build/void.css">
+<script src="assets/overview/assets/cdn.tailwindcss.com/3.4.17.js"></script>
+<style>
+/* ================================================================ catalog shell
+   Routing and layout only. The chrome is the page's own fixed frame from void.css: the grain (.noise),
+   the red scroll bar (.progress), the left rail (.side-rail) and the glass topbar (.topbar), whose link
+   list becomes the two catalog views. Inside the Overview frame those four are hidden (ds-embed) and
+   drawn here instead, so they stay put in both views. */
+html, body { height: 100%; }
+html { scroll-behavior: auto; }
+body { overflow: hidden; }
+#overview-frame { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; display: block; z-index: 0; background: var(--paper); }
+body.is-components #overview-frame { visibility: hidden; }
+
+#ds-topbar .top-mid a { transition: color .3s; }
+#ds-topbar .top-mid a:hover { color: var(--red); }
+#ds-topbar .top-mid a.is-active { text-decoration: underline; text-decoration-color: var(--red); text-decoration-thickness: 2px; text-underline-offset: 7px; }
+#ds-topbar .top-mid a[aria-disabled="true"] { opacity: .4; pointer-events: none; }
+/* the page drops its links under 851px; the catalog keeps its two views reachable */
+@media (max-width: 850px) {
+  #ds-topbar .top-mid { display: flex; gap: 18px; }
+}
+@media (max-width: 600px) {
+  #ds-topbar { grid-template-columns: minmax(0, 1fr) auto; }
+  #ds-topbar > span { display: none; }
+}
+</style>
+<style>
+/* ================================================================ components view
+   Live background: the hero's own poster ground (.launch-pin .launch-visual — tri-band gradient, the
+   paper "03" numeral and the outlined "VOID/03"), driven by the catalog scroll and pointer with the
+   page's paintHero() formulas. Every specimen links the same void.css; .ds-ctx only takes a section's
+   own box out of the way (height, padding, position) while keeping its ground, color and scoped rules. */
+:root { --ds-top: 65px; --ds-mono: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace; }
+#view-components { position: fixed; top: var(--ds-top); left: var(--rail); right: 0; bottom: 0; z-index: 150; display: none; }
+body.is-components #view-components { display: grid; grid-template-columns: 232px minmax(0, 1fr); }
+
+/* the live ground, pinned behind the whole view */
+#ds-bg { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+#ds-bg .launch { min-height: 0; height: 100%; border: 0; }
+#ds-bg .launch-pin { position: absolute; inset: 0; top: 0; height: 100%; }
+#ds-bg .launch-pin:after { display: none; }
+
+/* sidebar: its own ink glass (the drop index ground, paper type), legible over any stage */
+#ds-side { overflow-y: auto; padding: 28px 14px 40px 16px; display: flex; flex-direction: column; gap: 2px;
+  background: rgba(16,16,16,.93); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  border-right: 1px solid var(--ink); color: var(--paper); }
+#ds-side .ds-lbl { margin: 0 0 18px 10px; font: 500 10px/1.55 var(--ds-mono); letter-spacing: .08em; text-transform: uppercase; color: #bdb8ad; }
+#ds-side a { display: flex; align-items: baseline; gap: 12px; padding: 9px 10px; font: 500 11px/1.2 var(--ds-mono); letter-spacing: .06em;
+  text-transform: uppercase; color: #e9e5dc; transition: background .25s, color .25s; }
+#ds-side a b { font-weight: 500; font-size: 9px; color: #a9a497; font-variant-numeric: tabular-nums; }
+#ds-side a:hover { color: var(--paper); background: rgba(243,239,229,.1); }
+#ds-side a.is-current { background: var(--acid); color: var(--ink); }
+#ds-side a.is-current b { color: var(--ink); }
+
+#ds-main { position: relative; overflow-y: auto; overflow-x: hidden; padding: 54px clamp(20px, 4vw, 64px) 160px; }
+#ds-main > * { max-width: 1180px; }
+.ds-group { padding-bottom: 110px; }
+.ds-head { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px 24px;
+  border-bottom: 1px solid var(--ink); padding-bottom: 18px; margin-bottom: 34px; }
+.ds-head h2 { margin: 0; font-size: clamp(44px, 5.2vw, 80px); font-weight: 800; line-height: .86; letter-spacing: -.075em; padding-top: .1em; }
+.ds-head .eyebrow { background: var(--paper); padding: 6px 8px; border: 1px solid var(--ink); }
+.ds-sub { margin: 46px 0 16px; display: inline-block; background: var(--ink); color: var(--paper); padding: 7px 9px; }
+.ds-head + .ds-sub { margin-top: 0; }
+.ds-spec { margin: 0 0 56px; position: relative; }
+.ds-spec:last-child { margin-bottom: 0; }
+.ds-spec > h3 { margin: 0 0 14px; font-size: 22px; font-weight: 800; letter-spacing: -.05em; }
+.ds-meta { display: block; margin-top: 12px; font: 400 11px/1.6 var(--ds-mono); color: #2b2a27; overflow-wrap: anywhere; }
+.ds-meta b { font-weight: 500; color: var(--ink); }
+.ds-note { margin-top: 8px; max-width: 80ch; font-size: 13.5px; line-height: 1.6; color: #2b2a27; }
+.ds-note code, .ds-meta code { font: 400 11px/1.6 var(--ds-mono); }
+/* metadata sits on a paper tab so it stays legible over the bands and the drifting numeral */
+.ds-card { background: rgba(243,239,229,.94); border: 1px solid var(--ink); padding: 14px 16px; }
+.ds-row { display: flex; flex-wrap: wrap; align-items: center; gap: 22px 30px; }
+.ds-cell { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; min-width: 0; }
+.ds-cell > small { font: 500 9px/1 var(--ds-mono); letter-spacing: .08em; text-transform: uppercase; color: #2b2a27; }
+.ds-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.ds-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.ds-replay { margin-top: 16px; }
+
+/* specimen contexts */
+.ds-ctx { min-height: 0 !important; height: auto !important; width: auto !important; padding: 0 !important; margin: 0 !important;
+  overflow: visible !important; display: block !important; clip-path: none !important; border: 0 !important; }
+.ds-ctx.ds-pad { padding: 30px 32px !important; }
+.ds-ctx.ds-clip { overflow: hidden !important; }
+.ds-flat { position: relative !important; inset: auto !important; }
+.ds-still { transform: none !important; }
+.ds-line { box-shadow: inset 0 0 0 1px var(--ink); }
+/* full-size section stages: the page's own viewport box (main width x 100vh - 65px), scaled to the column */
+.ds-scaler { position: relative; overflow: hidden; box-shadow: 0 0 0 1px var(--ink); }
+.ds-vp { position: absolute; left: 0; top: 0; width: calc(100vw - var(--rail)); height: calc(100vh - 65px); transform: scale(var(--k, .7)); transform-origin: 0 0; overflow: hidden; }
+</style>
+<style>
+/* ------------------------------------------------------------ components: formats */
+/* typography: role | live sample | declared size — one paper sheet per row set */
+.ds-types { background: rgba(243,239,229,.94); border: 1px solid var(--ink); }
+.ds-type { display: grid; grid-template-columns: 180px minmax(0, 1fr) 190px; gap: 26px; align-items: center; padding: 22px 20px; border-top: 1px solid var(--ink); }
+.ds-type:first-child { border-top: 0; }
+.ds-type .role { font-size: 14px; font-weight: 800; letter-spacing: -.03em; }
+.ds-type .face { margin-top: 4px; font: 400 10.5px/1.55 var(--ds-mono); text-transform: uppercase; letter-spacing: .04em; color: #2b2a27; }
+.ds-type .face code { display: block; margin-top: 6px; text-transform: none; letter-spacing: 0; overflow-wrap: anywhere; }
+.ds-type .sample { min-width: 0; overflow: hidden; }
+.ds-type .sizes { text-align: right; font: 500 11px/1.65 var(--ds-mono); color: var(--ink); overflow-wrap: anywhere; }
+.ds-type .sizes i { display: block; font-style: normal; font-size: 10px; color: #55534d; }
+
+/* colors: live chip on its surface + label, value, token, use */
+.ds-fam { margin-bottom: 26px; }
+.ds-fam > .eyebrow { display: inline-block; margin-bottom: 12px; background: var(--ink); color: var(--paper); padding: 6px 8px; }
+.ds-colors { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0; background: rgba(243,239,229,.94); border: 1px solid var(--ink); }
+.ds-sw { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 14px; align-items: start; padding: 14px; box-shadow: 0 0 0 .5px var(--ink); }
+.ds-chip { position: relative; height: 76px; overflow: hidden; display: grid; place-items: center; background: var(--paper); box-shadow: inset 0 0 0 1px var(--ink); }
+.ds-chip .aa { position: relative; font-weight: 800; font-size: 26px; line-height: 1; letter-spacing: -.06em; }
+.ds-chip .fill { position: absolute; inset: 0; }
+.ds-chip .bar { position: absolute; left: 10px; right: 10px; top: 50%; height: 0; border-top: 1px solid; }
+.ds-sw strong { display: block; font-size: 13.5px; font-weight: 800; letter-spacing: -.02em; }
+.ds-sw code { display: block; margin-top: 3px; font: 400 10.5px/1.45 var(--ds-mono); overflow-wrap: anywhere; }
+.ds-sw code.tok { color: #55534d; }
+.ds-sw p { margin: 4px 0 0; font-size: 12px; line-height: 1.45; color: #2b2a27; }
+.ds-states { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; padding: 16px; background: rgba(243,239,229,.94); border: 1px solid var(--ink); }
+.ds-states > strong { grid-column: 1 / -1; font-size: 14px; font-weight: 800; letter-spacing: -.03em; }
+.ds-state { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ds-state small { font: 500 9px/1 var(--ds-mono); letter-spacing: .08em; text-transform: uppercase; }
+.ds-state code { font: 400 10.5px/1.45 var(--ds-mono); overflow-wrap: anywhere; }
+.ds-state .ds-chip { height: 64px; }
+.ds-states + .ds-states { margin-top: 14px; }
+
+/* backgrounds */
+.ds-bgbox { position: relative; height: 360px; overflow: hidden; box-shadow: 0 0 0 1px var(--ink); }
+.ds-bgbox.tall { height: 440px; }
+.ds-flag { position: absolute; z-index: 90; left: 12px; bottom: 12px; background: var(--paper); color: var(--ink); border: 1px solid var(--ink);
+  padding: 8px 10px; font: 500 9px/1 var(--ds-mono); letter-spacing: .04em; text-transform: uppercase; pointer-events: none; }
+.ds-bgbox .noise { position: absolute; z-index: 5; }
+.ds-bgbox > .launch:not(.ds-ctx), .ds-bgbox > .system-lab:not(.ds-ctx), .ds-bgbox > .finale:not(.ds-ctx), .ds-bgbox > .drop-index:not(.ds-ctx) { position: absolute !important; inset: 0; }
+.ds-bgbox .launch-pin { position: absolute; inset: 0; height: 100%; top: 0; }
+.ds-bgbox .launch-pin:after { display: none; }
+.ds-bgbox .slide { position: absolute; inset: 0; width: 100%; height: 100%; grid-template-columns: 0 minmax(0, 1fr); }
+.ds-bgbox .slide-index { display: none; }
+.ds-bgbox .transit-visual { position: absolute; inset: 0; min-height: 0; }
+.ds-bgbox .lab-stage { height: 100%; min-height: 0; }
+.ds-window { height: min(46vh, 380px); box-shadow: 0 0 0 1px var(--ink); position: relative; }
+.ds-window .ds-flag { left: 12px; bottom: 12px; }
+
+/* icons */
+.ds-icons { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; background: rgba(243,239,229,.94); border: 1px solid var(--ink); }
+.ds-icon { display: flex; flex-direction: column; align-items: center; gap: 14px; min-width: 0; padding: 24px 10px 18px; text-align: center; box-shadow: 0 0 0 .5px var(--ink); }
+.ds-icon .stage-i { height: 60px; display: grid; place-items: center; }
+.ds-icon code { font: 400 10.5px/1.45 var(--ds-mono); overflow-wrap: anywhere; }
+.ds-icon code i { display: block; font-style: normal; color: #55534d; }
+.ds-icon.ink { background: var(--ink); color: var(--paper); }
+.ds-icon.ink code i { color: #bdb8ad; }
+.ds-icon .final-cta:before, .ds-icon .final-cta:after { display: none; }
+
+/* motion */
+.ds-ease { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: rgba(243,239,229,.94); border: 1px solid var(--ink); }
+.ds-ease > div { padding: 14px 16px; box-shadow: 0 0 0 .5px var(--ink); }
+.ds-ease strong { display: block; font-size: 13.5px; font-weight: 800; letter-spacing: -.02em; }
+.ds-ease code { display: block; margin-top: 4px; font: 400 10.5px/1.45 var(--ds-mono); overflow-wrap: anywhere; }
+.ds-ease p { margin: 6px 0 0; font-size: 12px; line-height: 1.45; color: #2b2a27; }
+.ds-gestures { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--ink); background: var(--paper); }
+.ds-gesture { position: relative; min-height: 190px; padding: 14px; box-shadow: 0 0 0 .5px var(--ink); display: flex; flex-direction: column; justify-content: space-between; gap: 14px; overflow: hidden; }
+.ds-gesture.dark { background: #07080a; color: var(--paper); }
+.ds-gesture > small { font: 500 9px/1.3 var(--ds-mono); letter-spacing: .06em; text-transform: uppercase; opacity: .8; }
+.ds-gesture .ds-media { height: 110px; overflow: hidden; }
+.ds-gesture .ds-media img { width: 100%; height: 100%; object-fit: cover; }
+.ds-gesture .transit-count { position: relative; right: auto; bottom: auto; align-self: flex-start; }
+.ds-gesture.span2 { grid-column: span 2; }
+.ds-gesture.span4 { grid-column: 1 / -1; min-height: 150px; }
+.ds-gesture .lab-counter, .ds-gesture .transit-note { position: relative; left: auto; right: auto; top: auto; bottom: auto; align-self: flex-start; }
+</style>
+<style>
+/* ------------------------------------------------------------ components: placements + responsive */
+/* display rows too wide for the center column: sample drops under role | size, full width */
+.ds-type.wide { grid-template-columns: 180px minmax(0, 1fr); }
+.ds-type.wide .sizes { grid-column: 2; grid-row: 1; }
+.ds-type.wide .sample { grid-column: 1 / -1; grid-row: 2; }
+.ds-type .sample > .ds-ctx { max-width: 100%; }
+/* pinned conveyor: the stage sticks while the catalog scroll drives the horizontal travel */
+.ds-pin { position: relative; }
+.ds-sticky { position: sticky; top: 24px; }
+.ds-scaler .ds-flag { z-index: 95; }
+.ds-scaler > .ds-vp .conveyor { height: 100%; }
+.ds-2 > .ds-scaler, .ds-2 > .ds-spec { min-width: 0; }
+#components-controls .product-views { display: flex; }
+.ds-bgbox .poster-stamps { position: absolute; inset: 0; }
+.ds-bgbox .footer { font-size: 9px; }
+.ds-replay + .ds-card { margin-top: 12px; }
+.ds-spec > .ds-card, .ds-spec > .ds-2 + .ds-card, .ds-spec > .ds-pin + .ds-card { margin-top: 12px; }
+
+@media (max-width: 1439px) {
+  .ds-type { grid-template-columns: 170px minmax(0, 1fr); }
+  .ds-type .sizes { grid-column: 2; text-align: left; }
+  .ds-type.wide .sizes { grid-row: 1; text-align: right; }
+}
+@media (max-width: 1100px) {
+  body.is-components #view-components { grid-template-columns: 200px minmax(0, 1fr); }
+  .ds-3, .ds-ease { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ds-3 > .ds-spec[style*="span 2"] { grid-column: 1 / -1 !important; }
+  .ds-gestures { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 850px) {
+  body.is-components #view-components { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  #ds-side { flex-direction: row; align-items: center; gap: 4px; overflow-x: auto; overflow-y: hidden; padding: 8px 10px;
+    border-right: 0; border-bottom: 1px solid var(--ink); scrollbar-width: none; }
+  #ds-side::-webkit-scrollbar { display: none; }
+  #ds-side .ds-lbl { display: none; }
+  #ds-side a { flex: 0 0 auto; padding: 8px 10px; white-space: nowrap; font-size: 10px; }
+  #ds-main { padding: 30px 16px 120px; }
+  .ds-group { padding-bottom: 80px; }
+  .ds-type, .ds-type.wide { grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 18px 14px; }
+  .ds-type .sizes, .ds-type.wide .sizes { grid-column: auto; grid-row: auto; text-align: left; }
+  .ds-type.wide .sample { grid-row: auto; }
+  .ds-2, .ds-3, .ds-ease { grid-template-columns: minmax(0, 1fr); }
+  .ds-3 > .ds-spec[style*="span 2"] { grid-column: auto !important; }
+  .ds-colors { grid-template-columns: minmax(0, 1fr); }
+  .ds-icons { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ds-gestures { grid-template-columns: minmax(0, 1fr); }
+  .ds-gesture.span2, .ds-gesture.span4 { grid-column: auto; }
+  .ds-ctx.ds-pad { padding: 22px 16px !important; }
+  .ds-bgbox { height: 280px; }
+  .ds-bgbox .footer { font-size: 10px; }
+  .ds-states { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+</style>
+</head>
+<body>
+
+<!-- the page's own fixed frame (void.css): grain, scroll bar, rail and topbar; the topbar links are the catalog views -->
+<div class="noise" aria-hidden="true"></div>
+<div class="progress" id="ds-progress" aria-hidden="true"></div>
+<aside class="side-rail"><a href="#overview" class="rail-mark" id="ds-home" aria-label="VOID/03 Design System — Overview">V/</a><span class="rail-name">Void system archive</span><span class="rail-count">03</span>
+</aside>
+<header class="topbar" id="ds-topbar"><span>VOID/03 / Design system</span>
+  <nav class="top-mid" aria-label="Design system views"><a id="nav-overview" href="#overview">Overview</a><a id="nav-components" href="#components">Components</a></nav>
+  <div class="top-end"><span>Worldwide dispatch</span><button class="bag" id="ds-bag">Bag [0]</button></div>
+</header>
+
+<iframe id="overview-frame" title="Overview" src="assets/overview/index.html"></iframe>
+
+<div id="view-components">
+<!-- live ground: the hero's own poster surface (void.css .launch-pin .launch-visual), moved by the catalog scroll -->
+<div id="ds-bg" aria-hidden="true"><section class="launch"><div class="launch-pin" id="ds-bg-pin"><div class="launch-visual" id="ds-bg-visual"></div></div></section></div>
+
+<aside id="ds-side" aria-label="Component groups">
+  <p class="ds-lbl">Components</p>
+  <a href="#components-typography"><b>01</b>Typography</a>
+  <a href="#components-colors"><b>02</b>Colors</a>
+  <a href="#components-backgrounds"><b>03</b>Backgrounds</a>
+  <a href="#components-surfaces"><b>04</b>Surfaces</a>
+  <a href="#components-icons"><b>05</b>Icons</a>
+  <a href="#components-motion"><b>06</b>Motion</a>
+  <a href="#components-actions"><b>07</b>Actions</a>
+  <a href="#components-navigation"><b>08</b>Navigation</a>
+  <a href="#components-controls"><b>09</b>Inputs and controls</a>
+  <a href="#components-cards"><b>10</b>Cards and containers</a>
+  <a href="#components-data"><b>11</b>Data display</a>
+  <a href="#components-media"><b>12</b>Media</a>
+  <a href="#components-content"><b>13</b>Content groups</a>
+</aside>
+
+<div id="ds-main">
+
+<!-- ============================================================ 01 typography -->
+<section class="ds-group" id="components-typography">
+  <div class="ds-head"><h2>Typography</h2><p class="eyebrow">Inter Tight 400–900 · DM Mono 400–500</p></div>
+  <div class="ds-types">
+  <div class="ds-type">
+    <div><div class="role">Display 1 · hero title</div><div class="face">Inter Tight 800 · −.075em · lh .84<code>.launch h1 · span stroke 1.5px var(--ink)</code></div></div>
+    <div class="sample"><div class="launch ds-ctx"><h1 class="ds-still" style="margin:0">VOID/03<br><span>DESIGN<br>SYSTEM.</span></h1></div></div>
+    <div class="sizes">clamp(74px, 9vw, 145px) | clamp(56px, 14vw, 104px) | clamp(49px, 15vw, 82px)<i>min(8vw, 105px) under 650px tall</i></div>
+  </div>
+  <div class="ds-type wide">
+    <div><div class="role">Display 2 · lookbook ground</div><div class="face">Inter Tight 900 · −.13em · lh .62<code>.back-type · .slide-one var(--blue)</code></div></div>
+    <div class="sample"><div class="slide slide-one ds-ctx ds-clip" style="height:230px"><div class="back-type ds-flat ds-still" style="top:-.06em;left:-.04em">TEMPOR</div></div></div>
+    <div class="sizes">clamp(180px, 34vw, 590px) | 55vw<i>clipped by its slide stage · .slide-three 30vw</i></div>
+  </div>
+  <div class="ds-type">
+    <div><div class="role">Display 3 · slide title</div><div class="face">Inter Tight 900 · −.075em · lh .82<code>.slide-one .slide-title · stroke 2px #13243c</code></div></div>
+    <div class="sample"><div class="slide slide-one ds-ctx ds-pad"><div class="slide-title ds-flat ds-still">ELIT</div></div></div>
+    <div class="sizes">clamp(100px, 17vw, 280px) | 28vw | 25vw<i>.slide-two clamp(84px, 12vw, 158px) · .slide-four clamp(92px, 10vw, 150px)</i></div>
+  </div>
+  <div class="ds-type wide">
+    <div><div class="role">Display 4 · finale</div><div class="face">Inter Tight 900 · −.085em · lh .79<code>.final-left h2 · span stroke 2px var(--paper)</code></div></div>
+    <div class="sample"><div class="finale ds-ctx ds-pad"><div class="final-left ds-ctx"><h2>ELIT<br><span>SEDO</span>MAGNA.</h2></div></div></div>
+    <div class="sizes">clamp(82px, 13vw, 210px) | 12.5vw | 19vw | 21vw<i>min(12vw, 155px) under 650px tall</i></div>
+  </div>
+  <div class="ds-type wide">
+    <div><div class="role">Heading 1 · laboratory</div><div class="face">Inter Tight 800 · −.065em · lh .85<code>.lab-header h2 · span stroke 1.5px var(--paper)</code></div></div>
+    <div class="sample"><div class="workstation system-lab ds-ctx ds-pad"><div class="lab-header ds-flat" style="width:auto"><h2 style="margin:0">SED QUIA<br><span>DO-LORE.</span></h2></div></div></div>
+    <div class="sizes">clamp(76px, 10vw, 158px) | 19vw<i>min(9vw, 116px) under 650px tall</i></div>
+  </div>
+  <div class="ds-type">
+    <div><div class="role">Heading 2 · drop index</div><div class="face">Inter Tight 400 · −.07em · lh .85<code>.index-head h2</code></div></div>
+    <div class="sample"><div class="drop-index ds-ctx ds-pad"><div class="index-head ds-ctx"><h2>AMET<br>DOLOR.</h2></div></div></div>
+    <div class="sizes">clamp(72px, 11vw, 178px) | 22vw</div>
+  </div>
+  <div class="ds-type">
+    <div><div class="role">Heading 3 · product</div><div class="face">Inter Tight 400 · −.07em · lh .86<code>.transit-commerce h2 · span stroke 1.5px var(--ink)</code></div></div>
+    <div class="sample"><div class="transit-commerce ds-ctx"><h2 style="margin:0">DOLORES<br><span>IPSUM.</span></h2></div></div>
+    <div class="sizes">clamp(64px, 8.2vw, 126px) | min(20vw, 118px) | min(19vw, 92px)</div>
+  </div>
+  <div class="ds-type">
+    <div><div class="role">Heading 4 · index row</div><div class="face">Inter Tight 700 · −.06em<code>.index-row b</code></div></div>
+    <div class="sample"><div class="drop-index ds-ctx ds-pad"><div class="index-row ds-ctx" style="padding:0 !important"><b>Consectetur ad</b></div></div></div>
+    <div class="sizes">clamp(34px, 5vw, 75px) | 9vw</div>
+  </div>
+  <div class="ds-type">
+    <div><div class="role">Numeral · outlined count</div><div class="face">Inter Tight 800 · −.08em · lh .7<code>.transit-count · stroke 1.5px var(--ink)</code></div></div>
+    <div class="sample"><span class="transit-count ds-flat" style="display:inline-block">03/300</span></div>
+    <div class="sizes">clamp(54px, 7vw, 108px)</div>
+  </div>
+  <div class="ds-type">
+    <div><div class="role">Numeral · module index</div><div class="face">Inter Tight 700 · −.06em<code>.lab-module b</code></div></div>
+    <div class="sample"><div class="workstation system-lab ds-ctx ds-pad"><div class="lab-module ds-ctx"><b>01</b></div></div></div>
+    <div class="sizes">42px | 36px</div>
+  </div>
+  <div class="ds-type">
+    <div><div class="role">Brand · wordmark</div><div class="face">Inter Tight 700 · −.04em · lh 1.15<code>.footer-brand strong · .rail-mark 900 −.08em</code></div></div>
+    <div class="sample"><div class="finale ds-ctx ds-pad" style="display:flex !important;align-items:center;gap:36px"><div class="footer-brand"><strong>VOID/03</strong></div><span class="rail-mark">V/</span></div></div>
+    <div class="sizes">16px | 18px<i>.rail-mark 25px | 20px</i></div>
+  </div>
+  <div class="ds-type">
+    <div><div class="role">Text 1 · lead</div><div class="face">Inter Tight 400 · lh 1.5<code>.index-head p · .transit-intro 16px</code></div></div>
+    <div class="sample"><div class="drop-index ds-ctx ds-pad"><div class="index-head ds-ctx"><p style="margin:0">Lorem ipsum. Dolor sit amet. Consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore.</p></div></div></div>
+    <div class="sizes">17px | 15px<i>.transit-intro 16px | 14px</i></div>
+  </div>
+  <div class="ds-type">
+    <div><div class="role">Text 2 · hero copy</div><div class="face">Inter Tight 400 · lh 1.45<code>.launch-copy p</code></div></div>
+    <div class="sample"><div class="launch-copy ds-ctx ds-flat" style="background:none"><p style="margin:0">Paper-grain grids, outlined display type, and signal red, acid, and cobalt panels that shift with every scroll.</p></div></div>
+    <div class="sizes">16px | 15px | 13px<i>14px under 650px tall</i></div>
+  </div>
+  <div class="ds-type">
+    <div><div class="role">Text 3 · module copy</div><div class="face">Inter Tight 400 · lh 1.45 · opacity .72<code>.lab-module p</code></div></div>
+    <div class="sample"><div class="workstation system-lab ds-ctx ds-pad"><div class="lab-module ds-ctx"><p style="margin:0">Consectetur adipiscing elit sed do eiusmod tempor incididunt.</p></div></div></div>
+    <div class="sizes">13px | 12px</div>
+  </div>
+  <div class="ds-type">
+    <div><div class="role">Eyebrow</div><div class="face">DM Mono 500 · .08em · uppercase · lh 1.55<code>.eyebrow</code></div></div>
+    <div class="sample"><span class="eyebrow">LOREM IPSUM / DOLOR 03<br>Sit amet consectetur adipiscing</span></div>
+    <div class="sizes">10px</div>
+  </div>
+  <div class="ds-type">
+    <div><div class="role">Meta · caption</div><div class="face">DM Mono 500 · uppercase · lh 1.55<code>.slide-caption</code></div></div>
+    <div class="sample"><div class="slide slide-one ds-ctx ds-pad"><p class="slide-caption ds-flat ds-still" style="margin:0">Lorem ipsum dolor sit amet, consectetur adipiscing elit sed do eiusmod tempor.</p></div></div>
+    <div class="sizes">10px | 8px</div>
+  </div>
+  <div class="ds-type">
+    <div><div class="role">Meta · data line</div><div class="face">DM Mono 400 · uppercase · lh 1.4<code>.data-line · value 500</code></div></div>
+    <div class="sample"><div class="transit-commerce ds-ctx"><div class="panel-data" style="display:block;border:0;padding:0"><div class="data-line" style="border:0;padding:0"><span>Shell</span><span>Recycled nylon 72%</span></div></div></div></div>
+    <div class="sizes">9px | 8px</div>
+  </div>
+  <div class="ds-type">
+    <div><div class="role">Meta · navigation</div><div class="face">DM Mono 500 · .06em · uppercase · lh 1<code>.topbar · .footer-label 8px .08em</code></div></div>
+    <div class="sample"><nav class="top-mid" style="display:flex;flex-wrap:wrap;font:500 10px/1 'DM Mono',monospace;text-transform:uppercase;letter-spacing:.06em"><a href="#lookbook">Lookbook</a><a href="#system">System</a><a href="#index">Index</a></nav></div>
+    <div class="sizes">10px | 8px</div>
+  </div>
+  </div>
+</section>
+
+<!-- ============================================================ 02 colors -->
+<section class="ds-group" id="components-colors">
+  <div class="ds-head"><h2>Colors</h2><p class="eyebrow">Six root tokens · observed values</p></div>
+
+  <div class="ds-fam"><span class="eyebrow">Brand and Accent</span>
+  <div class="ds-colors">
+    <div class="ds-sw"><div class="ds-chip" style="background:var(--red)"></div><div><strong>Signal red</strong><code>#f33a2f</code><code class="tok">--red</code><p>Scroll bar, add-to-bag, hover fills, slide 02 ground.</p></div></div>
+    <div class="ds-sw"><div class="ds-chip" style="background:var(--blue)"></div><div><strong>Field blue</strong><code>#123fdd</code><code class="tok">--blue</code><p>Add-to-bag hover and added state, slide 04 ground, slide 01 ground type.</p></div></div>
+    <div class="ds-sw"><div class="ds-chip" style="background:var(--acid)"></div><div><strong>Acid</strong><code>#d9ff00</code><code class="tok">--acid</code><p>Second stamp, slide 03 ground, product tag, text selection.</p></div></div>
+  </div></div>
+
+  <div class="ds-fam"><span class="eyebrow">Surfaces</span>
+  <div class="ds-colors">
+    <div class="ds-sw"><div class="ds-chip" style="background:var(--paper)"><div class="noise" style="position:absolute"></div></div><div><strong>Page ground</strong><code>#f3efe5</code><code class="tok">--paper</code><p>Body, rail, stamps, hero copy column.</p></div></div>
+    <div class="ds-sw"><div class="ds-chip" style="background:var(--muted)"></div><div><strong>Product field</strong><code>#d7d2c6</code><code class="tok">--muted</code><p>Transit visual band (128deg, 0–61%).</p></div></div>
+    <div class="ds-sw"><div class="ds-chip" style="background:#ded9cf"></div><div><strong>Hero band 2</strong><code>#ded9cf</code><p>Hero poster ground, 35–69%.</p></div></div>
+    <div class="ds-sw"><div class="ds-chip" style="background:#c7c1b6"></div><div><strong>Hero band 3</strong><code>#c7c1b6</code><p>Hero poster ground, 69–100%.</p></div></div>
+    <div class="ds-sw"><div class="ds-chip" style="background:#c9d7e7"></div><div><strong>Lookbook sky</strong><code>#c9d7e7</code><p>Slide 01 ground.</p></div></div>
+    <div class="ds-sw"><div class="ds-chip" style="background:var(--ink)"></div><div><strong>Ink ground</strong><code>#101010</code><code class="tok">--ink</code><p>Drop index, chips, rail counter.</p></div></div>
+    <div class="ds-sw"><div class="ds-chip" style="background:#07080a"></div><div><strong>Laboratory ground</strong><code>#07080a</code><p>System lab section and its module dock.</p></div></div>
+    <div class="ds-sw"><div class="ds-chip" style="background:linear-gradient(118deg, var(--paper) 0 35%, #ded9cf 35% 69%, #c7c1b6 69% 100%)"><div class="fill" style="top:22px;bottom:22px;background:rgba(243,239,229,.9);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--ink)"></div></div><div><strong>Topbar glass</strong><code>rgba(243,239,229,.9) · blur(14px)</code><p>Fixed topbar over every section.</p></div></div>
+    <div class="ds-sw"><div class="ds-chip" style="background:var(--red)"><div class="fill" style="top:18px;bottom:18px;left:8px;right:8px;background:rgba(243,239,229,.93);border:1px solid var(--ink)"></div></div><div><strong>Selector bar</strong><code>rgba(243,239,229,.93)</code><p>Hero product-view selector.</p></div></div>
+    <div class="ds-sw"><div class="ds-chip" style="background:var(--blue)"><div class="fill" style="top:18px;bottom:18px;left:8px;right:8px;background:rgba(20,69,230,.82);border:1px solid var(--paper)"></div></div><div><strong>Caption glass</strong><code>rgba(20,69,230,.82)</code><p>Slide 04 caption over its photo.</p></div></div>
+  </div></div>
+
+  <div class="ds-fam"><span class="eyebrow">Text and Icons</span>
+  <div class="ds-colors">
+    <div class="ds-sw"><div class="ds-chip"><span class="aa" style="color:var(--ink)">Aa</span></div><div><strong>Primary text</strong><code>#101010</code><code class="tok">--ink</code><p>All copy on paper, acid and red grounds.</p></div></div>
+    <div class="ds-sw"><div class="ds-chip" style="background:var(--ink)"><span class="aa" style="color:var(--paper)">Aa</span></div><div><strong>Inverse text</strong><code>#f3efe5</code><code class="tok">--paper</code><p>Drop index, laboratory, finale, footer.</p></div></div>
+    <div class="ds-sw"><div class="ds-chip" style="background:#c9d7e7"><span class="aa" style="color:#13243c">Aa</span></div><div><strong>Lookbook text</strong><code>#13243c</code><p>Slide 01 captions and outlined title.</p></div></div>
+    <div class="ds-sw"><div class="ds-chip"><span class="aa" style="color:var(--red);font:500 12px/1 'DM Mono',monospace;letter-spacing:0">● IN STOCK</span></div><div><strong>Stock status</strong><code>#f33a2f</code><code class="tok">--red</code><p>.stock beside the price.</p></div></div>
+  </div></div>
+
+  <div class="ds-fam"><span class="eyebrow">Borders</span>
+  <div class="ds-colors">
+    <div class="ds-sw"><div class="ds-chip"><span class="bar" style="border-color:var(--ink)"></span></div><div><strong>Hairline rule</strong><code>1px solid #101010</code><code class="tok">--ink</code><p>Rail, topbar, section splits, chips, tables.</p></div></div>
+    <div class="ds-sw"><div class="ds-chip" style="background:var(--ink)"><span class="bar" style="border-color:rgba(255,255,255,.4)"></span></div><div><strong>Index top rule</strong><code>rgba(255,255,255,.4)</code><p>.index-table top edge.</p></div></div>
+    <div class="ds-sw"><div class="ds-chip" style="background:var(--ink)"><span class="bar" style="border-color:rgba(255,255,255,.25)"></span></div><div><strong>Index row divider</strong><code>rgba(255,255,255,.25)</code><p>.index-row bottom edge.</p></div></div>
+    <div class="ds-sw"><div class="ds-chip" style="background:#07080a"><span class="bar" style="border-color:rgba(243,239,229,.4)"></span></div><div><strong>Dock rule</strong><code>rgba(243,239,229,.4)</code><p>.lab-dock top edge.</p></div></div>
+    <div class="ds-sw"><div class="ds-chip" style="background:#07080a"><span class="bar" style="border-color:rgba(243,239,229,.25)"></span></div><div><strong>Module divider</strong><code>rgba(243,239,229,.25)</code><p>.lab-module column rules.</p></div></div>
+    <div class="ds-sw"><div class="ds-chip" style="background:#07080a"><span class="bar" style="border-color:rgba(243,239,229,.65)"></span></div><div><strong>Counter frame</strong><code>rgba(243,239,229,.65)</code><p>.lab-counter border.</p></div></div>
+    <div class="ds-sw"><div class="ds-chip" style="background:#101113"><span class="bar" style="border-color:rgba(243,239,229,.55)"></span></div><div><strong>Footer rule</strong><code>rgba(243,239,229,.55)</code><p>.footer top border on the finale.</p></div></div>
+    <div class="ds-sw"><div class="ds-chip" style="background:var(--muted)"><span class="bar" style="border-color:rgba(16,16,16,.35);transform:rotate(-18deg)"></span></div><div><strong>Product rule</strong><code>rgba(16,16,16,.35)</code><p>.transit-rule, rotated −18deg.</p></div></div>
+    <div class="ds-sw"><div class="ds-chip" style="background:#07080a"><span class="bar" style="border-top:1px dashed rgba(243,239,229,.72)"></span></div><div><strong>Queue orbit</strong><code>1px dashed rgba(243,239,229,.72)</code><p>.final-cta:before ring.</p></div></div>
+  </div></div>
+
+
+  <div class="ds-fam"><span class="eyebrow">Interactive States</span>
+  <div class="ds-states">
+    <strong>Bag button · .bag</strong>
+    <div class="ds-state"><small>Default</small><button class="bag">Bag [0]</button><code>transparent · 1px solid var(--ink)</code></div>
+    <div class="ds-state"><small>Hover</small><button class="bag" style="background:var(--ink);color:var(--paper)">Bag [0]</button><code>var(--ink) · text var(--paper)</code></div>
+  </div>
+  <div class="ds-states">
+    <strong>Size button · .size-row button</strong>
+    <div class="ds-state"><small>Default</small><div class="size-row" style="display:block"><button style="width:64px">XS</button></div><code>transparent · 1px solid var(--ink)</code></div>
+    <div class="ds-state"><small>Hover</small><div class="size-row" style="display:block"><button style="width:64px;background:var(--ink);color:var(--paper)">XL</button></div><code>var(--ink) · text var(--paper)</code></div>
+    <div class="ds-state"><small>Selected</small><div class="size-row" style="display:block"><button class="active" style="width:64px">M</button></div><code>.active · var(--ink) · var(--paper)</code></div>
+  </div>
+  <div class="ds-states">
+    <strong>Add to bag · .add</strong>
+    <div class="ds-state"><small>Default</small><button class="add" style="margin:0">Add to bag <span>→</span></button><code>var(--red) · text var(--paper)</code></div>
+    <div class="ds-state"><small>Hover</small><button class="add" style="margin:0;background:var(--blue)">Add to bag <span>→</span></button><code>var(--blue)</code></div>
+    <div class="ds-state"><small>Active · added</small><button class="add" style="margin:0;background:var(--blue)">Added to bag <span>✓</span></button><code>inline var(--blue) · set by the click handler</code></div>
+  </div>
+  <div class="ds-states">
+    <strong>Colorway swatch · .colorway button</strong>
+    <div class="ds-state"><small>Default</small><div class="colorway" style="margin:0"><button aria-label="Signal red color"></button></div><code>18px · 1px solid var(--ink)</code></div>
+    <div class="ds-state"><small>Selected</small><div class="colorway" style="margin:0"><button class="active" aria-label="Void black color"></button></div><code>0 0 0 2px var(--paper), 0 0 0 3px var(--ink)</code></div>
+  </div>
+  <div class="ds-states">
+    <strong>Rows, cards and the queue · hover fills</strong>
+    <div class="ds-state"><small>Index row · default</small><div class="ds-chip" style="background:var(--ink)"><span class="aa" style="color:var(--paper)">Aa</span></div><code>.index-row · var(--ink) · var(--paper)</code></div>
+    <div class="ds-state"><small>Index row · hover</small><div class="ds-chip" style="background:var(--red)"><span class="aa" style="color:var(--ink)">Aa</span></div><code>var(--red) · var(--ink) · padding-left 18px</code></div>
+    <div class="ds-state"><small>Module · default</small><div class="ds-chip" style="background:#07080a"><span class="aa" style="color:var(--paper)">01</span></div><code>.lab-module · #07080a</code></div>
+    <div class="ds-state"><small>Module · hover</small><div class="ds-chip" style="background:var(--red)"><span class="aa" style="color:var(--ink)">01</span></div><code>var(--red) · var(--ink) · −12px</code></div>
+    <div class="ds-state"><small>Queue · default</small><div class="ds-chip" style="background:#07080a"><span class="aa" style="width:52px;height:52px;border-radius:50%;background:var(--ink);border:1px solid var(--paper)"></span></div><code>.final-cta · var(--ink) · border var(--paper)</code></div>
+    <div class="ds-state"><small>Queue · hover</small><div class="ds-chip" style="background:#07080a"><span class="aa" style="width:52px;height:52px;border-radius:50%;background:var(--paper);border:1px solid var(--paper)"></span></div><code>var(--paper) · text var(--ink)</code></div>
+    <div class="ds-state"><small>View · default</small><div class="ds-chip" style="background:rgba(243,239,229,.93)"><span class="aa" style="color:var(--ink);font:500 9px/1 'DM Mono',monospace">02 PORTRAIT</span></div><code>.product-views button · transparent</code></div>
+    <div class="ds-state"><small>View · selected</small><div class="ds-chip" style="background:var(--ink)"><span class="aa" style="color:var(--paper);font:500 9px/1 'DM Mono',monospace">01 CROUCH</span></div><code>:hover · .active · var(--ink)</code></div>
+    <div class="ds-state"><small>Footer link · hover</small><div class="ds-chip" style="background:#101113"><span class="aa" style="color:var(--red);font-size:13px;letter-spacing:0">Lookbook</span></div><code>.footer a:hover · var(--red) · 4px</code></div>
+    <div class="ds-state"><small>Selection</small><div class="ds-chip"><span class="aa" style="background:var(--acid);color:var(--ink);padding:2px 4px">Aa</span></div><code>::selection · var(--acid) · var(--ink)</code></div>
+  </div>
+  </div>
+
+  <div class="ds-fam"><span class="eyebrow">Overlays</span>
+  <div class="ds-colors">
+    <div class="ds-sw"><div class="ds-chip" style="background:var(--paper)"><div class="noise" style="position:absolute;opacity:.5"></div></div><div><strong>Grain</strong><code>.noise · SVG fractalNoise · opacity .08 · multiply</code><p>Fixed over the whole page (shown here at .5).</p></div></div>
+    <div class="ds-sw"><div class="ds-chip" style="background:linear-gradient(118deg, var(--paper) 0 35%, #ded9cf 35% 69%, #c7c1b6 69% 100%)"><div class="fill" style="background:linear-gradient(90deg, var(--paper) 0%, rgba(243,239,229,.97) 64%, rgba(243,239,229,.72) 82%, transparent 100%);right:10px"></div></div><div><strong>Hero copy veil</strong><code>linear-gradient(90deg, #f3efe5, rgba(243,239,229,.97) 64%, .72 82%, transparent)</code><p>.launch-pin .launch-copy over the poster.</p></div></div>
+    <div class="ds-sw"><div class="ds-chip"><img src="assets/overview/assets/cdn.jsdelivr.net/gh/VanhDc/aura-assets@main/void03/void-system-exploded-wide.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"><div class="fill" style="background:linear-gradient(90deg, rgba(7,8,10,.88) 0%, rgba(7,8,10,.48) 34%, rgba(7,8,10,.08) 66%, rgba(7,8,10,.44) 100%), linear-gradient(0deg, rgba(7,8,10,.72), transparent 38%)"></div></div><div><strong>Laboratory veil</strong><code>rgba(7,8,10,.88 → .48 → .08 → .44) + 0deg rgba(7,8,10,.72)</code><p>.lab-stage:after over the parts photo.</p></div></div>
+    <div class="ds-sw"><div class="ds-chip" style="background-image:linear-gradient(90deg, rgba(5,6,8,.84) 0%, rgba(5,6,8,.62) 48%, rgba(5,6,8,.16) 100%), url('assets/overview/assets/cdn.jsdelivr.net/gh/VanhDc/aura-assets@main/void03/void-cloth-field.png');background-size:cover;background-position:center"></div><div><strong>Finale veil</strong><code>rgba(5,6,8,.84) → .62 48% → .16</code><p>.finale over the cloth field.</p></div></div>
+    <div class="ds-sw"><div class="ds-chip" style="background:#c9d7e7"><div class="fill" style="background:linear-gradient(transparent 49.7%, rgba(0,0,0,.12) 50%, transparent 50.3%);background-size:100% 8px;opacity:.28;animation:scan 8s linear infinite"></div></div><div><strong>Scan lines</strong><code>rgba(0,0,0,.12) · 8px · opacity .28 · scan 8s</code><p>.slide-stage:after on every lookbook slide.</p></div></div>
+    <div class="ds-sw"><div class="ds-chip" style="background:#07080a"><span style="width:9px;height:9px;border-radius:50%;background:var(--red);box-shadow:0 0 0 5px rgba(242,54,46,.18)"></span></div><div><strong>Queue beacon halo</strong><code>0 0 0 5px rgba(242,54,46,.18)</code><p>.final-cta:after dot.</p></div></div>
+  </div></div>
+</section>
+
+<!-- ============================================================ 03 backgrounds -->
+<section class="ds-group" id="components-backgrounds">
+  <div class="ds-head"><h2>Backgrounds</h2><p class="eyebrow">Live · page viewport scaled to the column</p></div>
+
+  <div class="ds-spec">
+    <h3>Hero poster ground</h3>
+    <div class="ds-scaler" data-max-h="520"><div class="ds-vp"><section class="launch" style="min-height:0;height:100%;border:0"><div class="launch-pin" data-ds-hero-ground><div class="launch-visual"></div></div></section></div><span class="ds-flag">Live · this view's background</span></div>
+    <div class="ds-card ds-meta"><b>.launch-pin .launch-visual</b> · linear-gradient(118deg, var(--paper) 0 35%, #ded9cf 35% 69%, #c7c1b6 69% 100%) · <b>:before</b> "03" 44vw 900 var(--paper) · <b>:after</b> "VOID/03" 14vw stroke 2px rgba(243,239,229,.72) screen · both moved by paintHero() (--hero-num-x/y/scale, --void-x/y) from scroll and pointer. Behind this whole view it follows the catalog scroll.</div>
+  </div>
+
+  <div class="ds-spec">
+    <h3>Page ground · paper grain</h3>
+    <div class="ds-bgbox" style="height:220px;background:var(--paper)"><div class="noise"></div><span class="ds-flag">body · .noise</span></div>
+    <div class="ds-card ds-meta"><b>body</b> var(--paper) #f3efe5 · <b>.noise</b> fixed, z-index 300, SVG feTurbulence fractalNoise .9 / 3 octaves, opacity .08, mix-blend-mode multiply — over rail, topbar and every section.</div>
+  </div>
+
+  <div class="ds-spec">
+    <h3>Lookbook depth grounds</h3>
+    <div class="ds-2">
+      <div class="ds-scaler" data-max-h="420"><div class="ds-vp"><article class="slide slide-one" data-ds-slide><div class="slide-index">01</div><div class="slide-stage"><div class="back-type">TEMPOR</div><div class="orbit" aria-hidden="true"></div><div class="front-type">01</div></div></article></div><span class="ds-flag">.slide-one · #c9d7e7</span></div>
+      <div class="ds-scaler" data-max-h="420"><div class="ds-vp"><article class="slide slide-two" data-ds-slide><div class="slide-index">02</div><div class="slide-stage"><div class="back-type">AMET</div><div class="front-type">02</div></div></article></div><span class="ds-flag">.slide-two · var(--red)</span></div>
+      <div class="ds-scaler" data-max-h="420"><div class="ds-vp"><article class="slide slide-three" data-ds-slide><div class="slide-index">03</div><div class="slide-stage"><div class="back-type">03/03</div><div class="orbit" aria-hidden="true"></div><div class="front-type">SIT</div></div></article></div><span class="ds-flag">.slide-three · var(--acid)</span></div>
+      <div class="ds-scaler" data-max-h="420"><div class="ds-vp"><article class="slide slide-four" data-ds-slide><div class="slide-index">04</div><div class="slide-stage"><div class="back-type">ALIQUA</div><div class="front-type">V/</div></div></article></div><span class="ds-flag">.slide-four · var(--blue)</span></div>
+    </div>
+    <div class="ds-card ds-meta"><b>.slide-stage</b> perspective 1000px, preserve-3d · <b>:after</b> scan lines (scan 8s linear infinite) · <b>.back-type</b> 900 ground type · <b>.orbit</b> 34vw ring, acid and blue nodes (orbit 13s linear infinite) · <b>.front-type</b> outlined, mix-blend-mode difference (hidden on slide 04). Planes placed with the page's paintSlide(); pointer moves them.</div>
+  </div>
+
+  <div class="ds-spec">
+    <h3>Product field</h3>
+    <div class="ds-scaler" data-max-h="460"><div class="ds-vp" style="width:calc((100vw - var(--rail)) * .6);height:112vh"><div class="transit-visual" style="min-height:100%;height:100%"><div class="transit-rule" aria-hidden="true"></div></div></div><span class="ds-flag">.transit-visual</span></div>
+    <div class="ds-card ds-meta"><b>.transit-visual</b> linear-gradient(128deg, var(--muted) 0 61%, var(--paper) 61%) · <b>:before</b> "SHELL" 20vw rgba(16,16,16,.1) · <b>:after</b> "PRODUCT / 03" acid tag · <b>.transit-rule</b> rgba(16,16,16,.35), −18deg, red node.</div>
+  </div>
+
+  <div class="ds-spec">
+    <h3>Laboratory stage</h3>
+    <div class="ds-scaler" data-max-h="480"><div class="ds-vp"><div class="workstation system-lab" style="min-height:0;height:100%"><div class="lab-stage" style="min-height:0;height:100%"><img class="lab-image" src="assets/overview/assets/cdn.jsdelivr.net/gh/VanhDc/aura-assets@main/void03/void-system-exploded-wide.png" alt="" data-ds-lab></div></div></div><span class="ds-flag">.lab-stage</span></div>
+    <div class="ds-card ds-meta"><b>.system-lab</b> #07080a · <b>.lab-image</b> cover, inset −3%, saturate(.96) contrast(1.05), scroll scale 1.045 → 1.08 · <b>.lab-stage:after</b> 90deg + 0deg rgba(7,8,10) veils.</div>
+  </div>
+
+  <div class="ds-2">
+    <div class="ds-spec">
+      <h3>Drop index ground</h3>
+      <div class="ds-bgbox" style="height:300px"><div class="drop-index" style="padding:0"></div><span class="ds-flag">.drop-index · var(--ink)</span></div>
+      <div class="ds-card ds-meta"><b>.drop-index</b> var(--ink) · color var(--paper).</div>
+    </div>
+    <div class="ds-spec">
+      <h3>Finale cloth field</h3>
+      <div class="ds-scaler" data-max-h="300"><div class="ds-vp" style="height:100vh"><section class="finale" style="height:100%;min-height:0"><div class="final-left"></div><div class="final-right"><div class="final-number" data-ds-final>03</div></div></section></div><span class="ds-flag">.finale</span></div>
+      <div class="ds-card ds-meta"><b>.finale</b> rgba(5,6,8,.84 → .62 → .16) over void-cloth-field.png, cover · <b>.final-number</b> 42vw, var(--paper) at .14, scroll-rotated.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 04 surfaces -->
+<section class="ds-group" id="components-surfaces">
+  <div class="ds-head"><h2>Surfaces</h2><p class="eyebrow">Hairline boxes · no radius · no shadow</p></div>
+
+  <div class="ds-spec">
+    <h3>Poster stamps</h3>
+    <div class="ds-bgbox" style="height:230px;background:linear-gradient(118deg, var(--paper) 0 35%, #ded9cf 35% 69%, #c7c1b6 69% 100%)"><div class="poster-stamps"><span class="stamp">Lorem V-03</span><span class="stamp">Ipsum 300 dolor</span><span class="stamp">Sit-amet / 3-elit</span></div></div>
+    <div class="ds-card ds-meta"><b>.stamp</b> var(--paper) · 1px solid var(--ink) · 8px 10px · DM Mono 500 9px uppercase · stampFloat 4s (−1.3s, −2.5s) · <b>:nth-child(2)</b> var(--acid) · <b>:nth-child(3)</b> writing-mode vertical-rl · 7px and hidden second stamp under 601px.</div>
+  </div>
+
+  <div class="ds-2">
+    <div class="ds-spec">
+      <h3>Floating spec</h3>
+      <div class="ds-bgbox" style="height:190px"><div class="slide slide-one" style="position:absolute;inset:0;width:auto;height:auto;display:grid;grid-template-columns:minmax(0,1fr);place-items:center"><span class="floating-spec ds-flat">Static load / 22 kg<br>Cord tension / Neutral</span></div></div>
+      <div class="ds-card ds-meta"><b>.floating-spec</b> 1px solid currentColor · background inherit · 11px · DM Mono 500 9px/1.4 · max-width 220px · hidden under 601px.</div>
+    </div>
+    <div class="ds-spec">
+      <h3>Laboratory counter</h3>
+      <div class="ds-bgbox" style="height:190px;background:#07080a;color:var(--paper);display:grid;place-items:center"><span class="lab-counter ds-flat">Archive scan / 03.5</span></div>
+      <div class="ds-card ds-meta"><b>.lab-counter</b> 1px solid rgba(243,239,229,.65) · 10px 12px · DM Mono 500 9px uppercase.</div>
+    </div>
+    <div class="ds-spec">
+      <h3>Caption box · paper</h3>
+      <div class="ds-bgbox" style="height:190px"><div class="slide slide-two" style="position:absolute;inset:0;width:auto;height:auto;display:grid;grid-template-columns:minmax(0,1fr);place-items:center"><p class="slide-caption ds-flat ds-still" style="margin:0">Ut enim ad minim veniam. Quis nostrud. Duis aute irure dolor in reprehenderit.</p></div></div>
+      <div class="ds-card ds-meta"><b>.slide-two .slide-caption</b> var(--paper) · 14px · 1px solid var(--ink) on var(--red).</div>
+    </div>
+    <div class="ds-spec">
+      <h3>Caption box · blue glass</h3>
+      <div class="ds-bgbox" style="height:190px"><div class="slide slide-four" style="position:absolute;inset:0;width:auto;height:auto;display:grid;grid-template-columns:minmax(0,1fr);place-items:center"><img src="assets/overview/assets/cdn.jsdelivr.net/gh/VanhDc/aura-assets@main/void03/void-detail.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:1"><p class="slide-caption ds-flat ds-still" style="margin:0;z-index:7">Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium.</p></div></div>
+      <div class="ds-card ds-meta"><b>.slide-four .slide-caption</b> rgba(20,69,230,.82) · 12px · 1px solid currentColor · max-width 270px.</div>
+    </div>
+  </div>
+
+  <div class="ds-spec">
+    <h3>Index preview frame</h3>
+    <div class="ds-bgbox" style="height:420px;display:grid;place-items:center"><div class="drop-index" style="position:absolute;inset:0;padding:0"></div><div class="index-preview show ds-flat" style="transform:rotate(2deg);position:relative"><img src="assets/overview/assets/cdn.jsdelivr.net/gh/VanhDc/aura-assets@main/void03/void-hero.png" alt=""></div></div>
+    <div class="ds-card ds-meta"><b>.index-preview</b> 280 × 360 · 8px solid var(--paper) · fixed at the pointer · <b>.show</b> scale(1) rotate(2deg), from scale(.85) rotate(−4deg) · opacity .25s, transform .35s var(--ease). Live in Data display → index table.</div>
+  </div>
+</section>
+
+<!-- ============================================================ 05 icons -->
+<section class="ds-group" id="components-icons">
+  <div class="ds-head"><h2>Icons</h2><p class="eyebrow">Text glyphs · no icon library</p></div>
+  <div class="ds-icons">
+    <div class="ds-icon ink"><div class="stage-i"><div class="finale ds-ctx" style="background:none"><button class="final-cta ds-flat" style="width:auto;aspect-ratio:auto;padding:0;border:0;background:none;display:block"><b aria-hidden="true">↗</b></button></div></div><code>↗<i>.final-cta b · Arial 400 26px</i></code></div>
+    <div class="ds-icon ink"><div class="stage-i"><div class="drop-index ds-ctx"><div class="index-row ds-ctx"><i>↗</i></div></div></div><code>↗<i>.index-row i · 22px | 13px</i></code></div>
+    <div class="ds-icon ink"><div class="stage-i"><div class="lab-module ds-ctx"><i style="align-self:center">↗</i></div></div><code>↗<i>.lab-module i · DM Mono 10px</i></code></div>
+    <div class="ds-icon"><div class="stage-i"><button class="add" style="width:auto;margin:0;padding:12px 14px"><span>→</span></button></div><code>→<i>.add span</i></code></div>
+    <div class="ds-icon"><div class="stage-i"><span class="eyebrow">↓</span></div><code>↓<i>.copy-foot · scroll cue</i></code></div>
+    <div class="ds-icon"><div class="stage-i"><button class="add" style="width:auto;margin:0;padding:12px 14px;background:var(--blue)"><span>✓</span></button></div><code>✓<i>.add · added state</i></code></div>
+    <div class="ds-icon"><div class="stage-i"><span class="price"><span class="stock" style="margin:0">●</span></span></div><code>●<i>.stock · var(--red)</i></code></div>
+    <div class="ds-icon"><div class="stage-i"><div class="orbit ds-flat" style="width:44px;left:auto;top:auto;transform:none;animation:none"></div></div><code>○<i>.orbit · acid / blue nodes</i></code></div>
+    <div class="ds-icon"><div class="stage-i"><div style="position:relative;width:84px;height:24px"><div class="transit-rule" style="left:0;right:0;transform:none"></div></div></div><code>—●<i>.transit-rule node</i></code></div>
+    <div class="ds-icon"><div class="stage-i"><div class="colorway" style="margin:0"><button class="active" aria-label="Void black color"></button><button aria-label="Signal red color"></button><button aria-label="Field blue color"></button></div></div><code>● ● ●<i>.colorway swatches</i></code></div>
+  </div>
+</section>
+
+<!-- ============================================================ 06 motion -->
+<section class="ds-group" id="components-motion">
+  <div class="ds-head"><h2>Motion</h2><p class="eyebrow">One ease · seven entrance gestures</p></div>
+
+  <span class="eyebrow ds-sub">Timing</span>
+  <div class="ds-ease">
+    <div><strong>Ease</strong><code>--ease · cubic-bezier(.16, 1, .3, 1)</code><p>Every entrance, the preview card and most hover transitions.</p></div>
+    <div><strong>Hero entrance</strong><code>body.hero-enter · 1.15s · removed at 1550ms</code><p>Ground clip, title, eyebrow, copy, foot, model, stamps, selector — staggered .04s to .68s.</p></div>
+    <div><strong>Section entrance</strong><code>.enter · opacity .85s · transform 1s · clip-path 1.1s · filter .9s</code><p>Seven gestures, --enter-delay per element; .active when 92% of the viewport is passed.</p></div>
+    <div><strong>Reveal</strong><code>.reveal · opacity/transform .8s var(--ease)</code><p>translateY(35px) → none, IntersectionObserver threshold .08.</p></div>
+    <div><strong>Loops</strong><code>scan 8s · orbit 13s · queueOrbit 12s linear · stampFloat 4s ease-in-out</code><p>Scan lines, lookbook ring, queue ring, poster stamps.</p></div>
+    <div><strong>Scroll-linked</strong><code>paintHero · track translate3d · meter scaleX(1 + cp·3)</code><p>Hero drift, 440vh horizontal lookbook, lab image scale, finale numeral rotation, .progress bar.</p></div>
+    <div><strong>Pointer</strong><code>followPointer · lerp .18 per frame</code><p>Hero surface and every slide stage tilt their planes toward the pointer.</p></div>
+    <div><strong>Hover</strong><code>.index-row .3s · .lab-module .14s/.16s · .final-cta .12s/.16s</code><p>Fills to var(--red) or var(--paper); the queue arrow turns 45deg.</p></div>
+    <div><strong>Reduced motion</strong><code>prefers-reduced-motion: reduce</code><p>Animations .001ms, entrances shown, lookbook stacks vertically.</p></div>
+  </div>
+
+  <span class="eyebrow ds-sub">Section entrance gestures</span>
+  <div class="ds-spec">
+    <div class="ds-gestures" id="ds-gestures">
+      <div class="ds-gesture"><small>enter-left · eyebrow, headings</small><span class="eyebrow enter enter-left">Lorem 03 / Ipsum dolorsit</span></div>
+      <div class="ds-gesture dark"><small>enter-right · .lab-counter</small><span class="lab-counter enter enter-right" style="--enter-delay:80ms">Archive scan / 03.5</span></div>
+      <div class="ds-gesture"><small>enter-up · .transit-intro</small><p class="transit-intro enter enter-up" style="margin:0;--enter-delay:160ms">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p></div>
+      <div class="ds-gesture"><small>enter-down · .transit-note</small><span class="transit-note enter enter-down" style="--enter-delay:240ms">Lorem ipsum<br>Dolor sit / Amet</span></div>
+      <div class="ds-gesture span2"><small>enter-scale · .transit-count</small><span class="transit-count enter enter-scale" style="--enter-delay:320ms">03/300</span></div>
+      <div class="ds-gesture dark"><small>enter-clip · .lab-stage</small><div class="ds-media enter enter-clip" style="--enter-delay:400ms"><img src="assets/overview/assets/cdn.jsdelivr.net/gh/VanhDc/aura-assets@main/void03/void-system-exploded-wide.png" alt=""></div></div>
+      <div class="ds-gesture" style="background:linear-gradient(128deg, var(--muted) 0 61%, var(--paper) 61%)"><small>enter-clip-reverse · .transit-visual</small><div class="ds-media enter enter-clip-reverse" style="--enter-delay:480ms"><img src="assets/overview/assets/cdn.jsdelivr.net/gh/VanhDc/aura-assets@main/void03/transit-shell-ghost-cutout.png" alt="" style="object-fit:contain"></div></div>
+      <div class="ds-gesture dark span4" style="background:var(--ink)"><small>reveal · .index-head</small><p class="reveal" style="margin:0;font-size:17px;line-height:1.5">Lorem ipsum. Dolor sit amet. Consectetur adipiscing elit.</p></div>
+    </div>
+    <button class="bag ds-replay" data-ds-replay="gestures">Replay ↻</button>
+    <div class="ds-card ds-meta"><b>.enter.enter-left</b> translate3d(−90px, 35px) rotate(−5deg) blur(5px) · <b>-right</b> (100px, −25px) 5deg · <b>-up</b> (0, 85px) 2deg blur(4px) · <b>-down</b> (0, −70px) −2deg · <b>-scale</b> scale(.72) −7deg blur(7px) · <b>-clip</b> inset(0 100% 0 0) · <b>-clip-reverse</b> inset(0 0 0 100%) · <b>.active</b> none · the page sets --enter-delay per element; here the cells are staggered 80ms so each gesture reads on its own.</div>
+  </div>
+</section>
+
+<!-- ============================================================ 07 actions -->
+<section class="ds-group" id="components-actions">
+  <div class="ds-head"><h2>Actions</h2><p class="eyebrow">Square mono buttons · one round queue</p></div>
+
+  <div class="ds-2">
+    <div class="ds-spec">
+      <h3>Bag button</h3>
+      <div class="ds-bgbox" style="height:150px;display:grid;place-items:center;background:rgba(243,239,229,.9)"><button class="bag">Bag [0]</button></div>
+      <div class="ds-card ds-meta"><b>.bag</b> 1px solid var(--ink) · 10px 13px · transparent → <b>:hover</b> var(--ink) / var(--paper) · 9px 8px under 601px. Its count follows the add-to-bag click (the page updates the first .bag, here the catalog topbar).</div>
+    </div>
+    <div class="ds-spec">
+      <h3>Add to bag</h3>
+      <div class="ds-bgbox" style="height:150px;display:grid;place-items:center;background:var(--paper)"><div class="transit-commerce ds-ctx" style="width:min(370px, 86%) !important"><button class="add" style="margin:0" data-ds-add>Add to bag <span>→</span></button></div></div>
+      <div class="ds-card ds-meta"><b>.add</b> var(--red) · 18px · DM Mono 500 11px uppercase · space-between · <b>:hover</b> var(--blue) · click → "Added to bag ✓", inline var(--blue).</div>
+      <button class="bag ds-replay" data-ds-replay="add">Reset ↻</button>
+    </div>
+  </div>
+
+  <div class="ds-spec">
+    <h3>Release queue</h3>
+    <div class="ds-bgbox" style="height:380px"><section class="finale" style="position:absolute;inset:0;min-height:0;display:grid;grid-template-columns:1fr;place-items:center"><button class="final-cta ds-flat"><span>Lorem ipsum<br>dolor</span><b aria-hidden="true">↗</b></button></section></div>
+    <div class="ds-card ds-meta"><b>.final-cta</b> 224px circle · var(--ink), 1px var(--paper) · Inter Tight 600 14px | 12px | 11px · <b>:before</b> dashed ring, queueOrbit 12s · <b>:after</b> var(--red) beacon · <b>:hover</b> var(--paper) / var(--ink), rotate(7deg) scale(1.08), arrow translate(8px, −8px) rotate(45deg) · 190px | 164px.</div>
+  </div>
+</section>
+
+<!-- ============================================================ 08 navigation -->
+<section class="ds-group" id="components-navigation">
+  <div class="ds-head"><h2>Navigation</h2><p class="eyebrow">Fixed L-frame · rail + topbar</p></div>
+
+  <div class="ds-spec">
+    <h3>Topbar</h3>
+    <div class="ds-bgbox" style="height:auto;overflow:visible;background:linear-gradient(118deg, var(--paper) 0 35%, #ded9cf 35% 69%, #c7c1b6 69% 100%);padding:0 0 46px"><header class="topbar ds-flat" style="left:auto;right:auto;width:100%;z-index:1"><span>Drop 03 / Modular transit shell</span>
+    <nav class="top-mid"><a href="#lookbook">Lookbook</a><a href="#system">System</a><a href="#index">Index</a></nav>
+    <div class="top-end"><span>Worldwide dispatch</span><button class="bag">Bag [0]</button></div>
+  </header></div>
+    <div class="ds-card ds-meta"><b>.topbar</b> fixed, left var(--rail), 65px · rgba(243,239,229,.9) + blur(14px) · 1px bottom var(--ink) · grid 1fr auto 1fr · DM Mono 500 10px .06em · <b>.top-mid</b> gap 30px, hidden under 851px (with "Worldwide dispatch") · 8px under 601px.</div>
+  </div>
+
+  <div class="ds-3">
+    <div class="ds-spec">
+      <h3>Side rail</h3>
+      <div class="ds-bgbox" style="height:440px;background:var(--paper)"><aside class="side-rail ds-flat" style="height:100%;border-right:1px solid var(--ink)"><a href="#top" class="rail-mark">V/</a><span class="rail-name">Void system archive</span><span class="rail-count">03</span></aside></div>
+      <div class="ds-card ds-meta"><b>.side-rail</b> --rail 86px | 64px | 52px | 44px · <b>.rail-mark</b> 900 25px · <b>.rail-name</b> vertical DM Mono 11px .18em · <b>.rail-count</b> 44px ink disc.</div>
+    </div>
+    <div class="ds-spec" style="grid-column:span 2">
+      <h3>Lookbook frame bar</h3>
+      <div class="ds-bgbox" style="height:200px"><div class="slide slide-one" style="position:absolute;inset:0;width:auto;height:auto;display:block"></div><div class="conveyor-ui" style="left:18px;right:18px;top:18px"><b>Lorem / Ipsum dolor</b><span>Frame 01 — Lorem ipsum</span></div><div class="conveyor-meter" style="left:18px;right:18px"><i style="transform:scaleX(1.8)"></i></div></div>
+      <div class="ds-card ds-meta"><b>.conveyor-ui</b> DM Mono 500 9px · <b>b</b> ink chip 8px 10px · <b>#frame-label</b> rewritten per frame (hidden under 601px) · <b>.conveyor-meter</b> 3px rgba(16,16,16,.2) · <b>i</b> 25% var(--red), scaleX(1 + cp·3).</div>
+      <h3 style="margin-top:34px">Hero foot</h3>
+      <div class="ds-bgbox" style="height:auto;padding:26px 24px;background:var(--paper)"><div class="copy-foot eyebrow"><span>Scroll to inspect ↓</span><span>01 / 04</span></div></div>
+      <div class="ds-card ds-meta"><b>.copy-foot</b> flex space-between · 1px top var(--ink) · 12px · max-width 290px under 851px · 7px under 601px.</div>
+    </div>
+  </div>
+
+  <div class="ds-spec">
+    <h3>Footer</h3>
+    <div class="ds-bgbox" style="height:auto;overflow:visible"><div class="finale ds-ctx" style="padding:30px 3vw !important"><footer class="footer ds-flat">
+        <div class="footer-brand">
+          <strong>VOID/03</strong><span>Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor.</span><small>© 2026 Void System Archive<br>Tokyo / London / Online</small>
+        </div>
+        <nav class="footer-nav" aria-label="Footer explore"><span class="footer-label">Explore</span><a href="#lookbook">Lookbook</a><a href="#product">Transit shell</a><a href="#system">System lab</a><a href="#index">Drop index</a></nav>
+        <nav class="footer-nav" aria-label="Customer service"><span class="footer-label">Service</span><a href="#product">Size guide</a><a href="#product">Shipping &amp; returns</a><a href="#system">Care &amp;
+            repair</a><a href="#product">Material archive</a></nav>
+        <nav class="footer-nav" aria-label="Social and legal"><span class="footer-label">Connect</span><a href="mailto:release@void.system">Email</a><a href="#top">Instagram</a><a href="#top">Are.na</a><a href="#top">Privacy / Terms</a></nav>
+      </footer></div></div>
+    <div class="ds-card ds-meta"><b>.footer</b> grid 1.45fr repeat(3, 1fr) · 1px top rgba(243,239,229,.55) · 9px | 10px · <b>.footer-label</b> DM Mono 8px .55 · <b>a:hover</b> var(--red), translateX(4px) · two columns under 851px.</div>
+  </div>
+</section>
+
+<!-- ============================================================ 09 inputs and controls -->
+<section class="ds-group" id="components-controls">
+  <div class="ds-head"><h2>Inputs and controls</h2><p class="eyebrow">Single-choice groups · .active</p></div>
+
+  <div class="ds-2">
+    <div class="ds-spec">
+      <h3>Size selector</h3>
+      <div class="ds-bgbox" style="height:auto;padding:26px 24px;background:var(--paper)"><div class="transit-commerce ds-ctx" data-ds-group><div class="sizes"><label class="eyebrow">Select size</label>
+            <div class="size-row"><button>XS</button><button class="active">M</button><button>XL</button></div></div></div></div>
+      <div class="ds-card ds-meta"><b>.sizes label</b> eyebrow · <b>.size-row</b> grid 3 × 1fr, gap 5px · <b>button</b> 1px var(--ink), 12px 4px · <b>:hover</b>, <b>.active</b> var(--ink) / var(--paper) · one active at a time.</div>
+    </div>
+    <div class="ds-spec">
+      <h3>Colorway</h3>
+      <div class="ds-bgbox" style="height:auto;padding:26px 24px;background:var(--paper)"><div class="transit-commerce ds-ctx"><div class="colorway" style="margin:0">
+              <span class="eyebrow">Color / Void black</span><button class="active" aria-label="Void black color"></button><button aria-label="Signal red color"></button><button aria-label="Field blue color"></button>
+            </div></div></div>
+      <div class="ds-card ds-meta"><b>.colorway button</b> 18px disc, 1px var(--ink) · var(--ink) | var(--red) | var(--blue) · <b>.active</b> box-shadow 0 0 0 2px var(--paper), 0 0 0 3px var(--ink).</div>
+    </div>
+  </div>
+
+  <div class="ds-spec">
+    <h3>Product view selector</h3>
+    <div class="ds-bgbox" style="height:170px;display:grid;place-items:center;background:linear-gradient(118deg, var(--paper) 0 35%, #ded9cf 35% 69%, #c7c1b6 69% 100%)"><div class="product-views ds-flat" role="group" aria-label="Select product view">
+            <button class="active"><b>01</b><span>Crouch</span></button><button><b>02</b><span>Portrait</span></button><button><b>03</b><span>Detail</span></button>
+          </div></div>
+    <div class="ds-card ds-meta"><b>.product-views</b> rgba(243,239,229,.93) · 1px var(--ink) · <b>:before</b> "VIEW / SELECT" (hidden under 851px) · <b>button</b> 88px × 48px, DM Mono 8px, <b>b</b> opacity .48 · <b>:hover</b>, <b>.active</b> var(--ink) · 52px | 43px, labels hidden under 851px. On the hero it swaps the model image (Media → hero poster).</div>
+  </div>
+</section>
+
+<!-- ============================================================ 10 cards and containers -->
+<section class="ds-group" id="components-cards">
+  <div class="ds-head"><h2>Cards and containers</h2><p class="eyebrow">Commerce panel · module dock</p></div>
+
+  <div class="ds-spec">
+    <h3>Buy panel</h3>
+    <div class="ds-bgbox" style="height:auto;padding:30px 3vw;background:var(--paper)"><div class="transit-commerce ds-ctx" style="max-width:520px">
+        <aside class="buy-panel">
+          <div>
+            <div class="product-code">LOREM&nbsp;IPSUM</div>
+            <div class="price">$210 USD <span class="stock">● In stock</span></div>
+            <div class="colorway">
+              <span class="eyebrow">Color / Void black</span><button class="active" aria-label="Void black color"></button><button aria-label="Signal red color"></button><button aria-label="Field blue color"></button>
+            </div>
+          </div>
+          <div class="sizes"><label class="eyebrow">Select size</label>
+            <div class="size-row"><button>XS</button><button class="active">M</button><button>XL</button></div>
+            <button class="add" data-ds-add>Add to bag <span>→</span></button>
+          </div>
+          <div class="panel-data">
+            <div class="data-line"><span>Shell</span><span>Recycled nylon 72%</span></div>
+            <div class="data-line"><span>Hardware</span><span>Molded TPU / Alloy</span></div>
+            <div class="data-line"><span>Dispatch</span><span>Within 48 hours</span></div>
+          </div>
+        </aside></div></div>
+    <div class="ds-card ds-meta"><b>.transit-commerce .buy-panel</b> grid, gap 28px (22px under 601px) · <b>.product-code</b> hidden here, as in the page · <b>.price</b> DM Mono 14px + <b>.stock</b> · colorway, sizes and add as above · <b>.panel-data</b> 3-column boxed data (stacked under 851px).</div>
+  </div>
+
+  <div class="ds-spec">
+    <h3>Module dock</h3>
+    <div class="ds-bgbox" style="height:auto;overflow:visible;padding-top:16px;background:#07080a"><div class="workstation system-lab ds-ctx"><div class="lab-dock">
+        <article class="lab-module"><b>01</b>
+          <div>
+            <h3>Lorem ipsum<br>Dolor sitamet</h3>
+            <p>Consectetur adipiscing elit sed do eiusmod tempor incididunt.</p>
+          </div><i>↗</i>
+        </article>
+        <article class="lab-module"><b>02</b>
+          <div>
+            <h3>Aliqua enimad<br>Minim veniam</h3>
+            <p>Quis nostrud exercitation ullamco laboris nisi ut aliquip.</p>
+          </div><i>↗</i>
+        </article>
+        <article class="lab-module"><b>03</b>
+          <div>
+            <h3>Duis aute<br>Irure dolor in</h3>
+            <p>Reprehenderit in voluptate velit esse cillum dolore fugiat.</p>
+          </div><i>↗</i>
+        </article>
+        <article class="lab-module"><b>04</b>
+          <div>
+            <h3>Nulla pariatur<br>Excepteur sint</h3>
+            <p>Occaecat cupidatat non proident, sunt in culpa officia.</p>
+          </div><i>↗</i>
+        </article>
+        <article class="lab-module"><b>05</b>
+          <div>
+            <h3>Deserunt mollit<br>Anim idest</h3>
+            <p>Sed ut perspiciatis unde omnis iste natus error voluptatem.</p>
+          </div><i>↗</i>
+        </article>
+      </div></div></div>
+    <div class="ds-card ds-meta"><b>.lab-dock</b> grid repeat(5, 1fr) | 2 columns (851–1100px) | 1 column · <b>.lab-module</b> 220px, 28px 20px, rules rgba(243,239,229,.25) · <b>h3</b> DM Mono 10px · <b>:hover</b> var(--red) / var(--ink), translateY(−12px).</div>
+  </div>
+</section>
+
+<!-- ============================================================ 11 data display -->
+<section class="ds-group" id="components-data">
+  <div class="ds-head"><h2>Data display</h2><p class="eyebrow">Mono data · hover-previewed index</p></div>
+
+  <div class="ds-2">
+    <div class="ds-spec">
+      <h3>Price and stock</h3>
+      <div class="ds-bgbox" style="height:auto;padding:28px 24px;background:var(--paper)"><div class="transit-commerce ds-ctx"><div class="price" style="margin:0">$210 USD <span class="stock">● In stock</span></div></div></div>
+      <div class="ds-card ds-meta"><b>.transit-commerce .price</b> DM Mono 500 14px · <b>.stock</b> var(--red) 9px uppercase, 12px gap.</div>
+    </div>
+    <div class="ds-spec">
+      <h3>Scroll progress</h3>
+      <div class="ds-bgbox" style="height:auto;padding:28px 0;background:var(--paper)"><div class="progress ds-flat" style="transform:scaleX(.62)"></div></div>
+      <div class="ds-card ds-meta"><b>.progress</b> fixed top, left var(--rail), 4px var(--red) · scaleX(scrollY / max) · the catalog topbar carries it for both views · <b>.launch-pin:after</b> 3px twin driven by --hero-progress.</div>
+    </div>
+  </div>
+
+  <div class="ds-spec">
+    <h3>Material data</h3>
+    <div class="ds-bgbox" style="height:auto;padding:28px 24px;background:var(--paper)"><div class="transit-commerce ds-ctx" style="max-width:560px"><div class="panel-data">
+            <div class="data-line"><span>Shell</span><span>Recycled nylon 72%</span></div>
+            <div class="data-line"><span>Hardware</span><span>Molded TPU / Alloy</span></div>
+            <div class="data-line"><span>Dispatch</span><span>Within 48 hours</span></div>
+          </div></div></div>
+    <div class="ds-card ds-meta"><b>.transit-commerce .panel-data</b> repeat(3, 1fr), 1px var(--ink) box · <b>.data-line</b> grid, 12px, DM Mono 400 9px uppercase, value 500 · stacked label | value rows under 851px.</div>
+  </div>
+
+  <div class="ds-spec">
+    <h3>Drop index table</h3>
+    <div class="ds-scaler"><div class="ds-vp" style="height:auto"><div class="drop-index" id="ds-index" style="padding:56px 3vw"><div class="index-table">
+        <div class="index-row" data-img="assets/overview/assets/cdn.jsdelivr.net/gh/VanhDc/aura-assets@main/void03/void-hero.png">
+          <span>01</span><b>Lorem ipsum</b><span>Black / Vermilion / Blue</span><i>$210 ↗</i></div>
+        <div class="index-row" data-img="assets/overview/assets/cdn.jsdelivr.net/gh/VanhDc/aura-assets@main/void03/void-detail.png">
+          <span>02</span><b>Dolor sitamet</b><span>Molded TPU / 6 anchors</span><i>$95 ↗</i></div>
+        <div class="index-row" data-img="assets/overview/assets/cdn.jsdelivr.net/gh/VanhDc/aura-assets@main/void03/void-crouch.png">
+          <span>03</span><b>Consectetur ad</b><span>Charcoal / Smoke panel</span><i>$145 ↗</i></div>
+        <div class="index-row" data-img="assets/overview/assets/cdn.jsdelivr.net/gh/VanhDc/aura-assets@main/void03/void-walk.png">
+          <span>04</span><b>Adipiscing elit</b><span>Off-white / Red sole</span><i>$180 ↗</i></div>
+      </div></div></div></div>
+    <div class="ds-card ds-meta"><b>.index-table</b> top rgba(255,255,255,.4) · <b>.index-row</b> grid 70px 1fr 1fr auto, 24px 0 · <b>b</b> clamp(34px, 5vw, 75px) · <b>span</b> DM Mono 10px · <b>i</b> 22px · <b>:hover</b> var(--red), padding-left 18px, <b>.index-preview</b> follows the pointer (hidden under 851px and on touch).</div>
+  </div>
+</section>
+
+<!-- ============================================================ 12 media -->
+<section class="ds-group" id="components-media">
+  <div class="ds-head"><h2>Media</h2><p class="eyebrow">Cut-out models · depth planes</p></div>
+
+  <div class="ds-spec">
+    <h3>Lookbook depth field</h3>
+    <div class="ds-pin" id="ds-conveyor-pin">
+      <div class="ds-scaler ds-sticky" data-max-h="600"><div class="ds-vp"><section class="conveyor" id="ds-conveyor" aria-label="VOID 03 horizontal lookbook" style="height:100%"><div class="conveyor-sticky" style="position:relative;top:0">
+        <div class="conveyor-ui"><b>Lorem / Ipsum dolor</b><span data-ds-frame>Frame 01 — Lorem ipsum</span></div>
+        <div class="track">
+          <article class="slide slide-one" data-ds-slide>
+            <div class="slide-index">01</div>
+            <div class="slide-stage">
+              <div class="back-type">TEMPOR</div>
+              <div class="orbit" aria-hidden="true"></div><img class="cutout" src="assets/overview/assets/cdn.jsdelivr.net/gh/VanhDc/aura-assets@main/void03/void-lookbook-seated-cutout.png" alt="VOID 03 model seated in a suspended editorial pose">
+              <div class="front-type">01</div>
+              <div class="slide-title">ELIT</div>
+              <p class="slide-caption">Lorem ipsum dolor sit amet, consectetur adipiscing elit sed do eiusmod tempor.
+              </p><span class="floating-spec spec-a">Static load / 22 kg<br>Cord tension / Neutral</span>
+            </div>
+          </article>
+          <article class="slide slide-two" data-ds-slide>
+            <div class="slide-index">02</div>
+            <div class="slide-stage">
+              <div class="back-type">AMET</div><img src="assets/overview/assets/cdn.jsdelivr.net/gh/VanhDc/aura-assets@main/void03/void-walk.png" alt="VOID 03 system in motion">
+              <div class="front-type">02</div>
+              <div class="slide-title">ANIM</div>
+              <p class="slide-caption">Ut enim ad minim veniam. Quis nostrud. Duis aute irure dolor in reprehenderit.
+              </p><span class="floating-spec spec-b">Stride test / 12 km<br>Wind field / 48 kph</span>
+            </div>
+          </article>
+          <article class="slide slide-three" data-ds-slide>
+            <div class="slide-index">03</div>
+            <div class="slide-stage">
+              <div class="back-type">03/03</div>
+              <div class="orbit" aria-hidden="true"></div><img src="assets/overview/assets/cdn.jsdelivr.net/gh/VanhDc/aura-assets@main/void03/void-hero-close-cutout.png" alt="Standing close portrait of the VOID 03 system">
+              <div class="front-type">SIT</div>
+              <div class="slide-title">SIT / 03</div>
+              <p class="slide-caption">Excepteur sint occaecat. Cupidatat non proident sunt in culpa qui officia deserunt
+                mollit.</p><span class="floating-spec spec-a">Knee membrane<br>Smoke TPU / 0.8 mm</span>
+            </div>
+          </article>
+          <article class="slide slide-four" data-ds-slide>
+            <div class="slide-index">04</div>
+            <div class="slide-stage">
+              <div class="back-type">ALIQUA</div><img src="assets/overview/assets/cdn.jsdelivr.net/gh/VanhDc/aura-assets@main/void03/void-detail.png" alt="Back construction detail of VOID 03 jacket">
+              <div class="front-type">V/</div>
+              <div class="slide-title">LABORE</div>
+              <p class="slide-caption">Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque
+                laudantium.</p><span class="floating-spec spec-b">Rear assembly<br>View 04 / 04</span>
+            </div>
+          </article>
+        </div>
+        <div class="conveyor-meter"><i></i></div>
+      </div></section></div></div>
+    </div>
+    <div class="ds-card ds-meta"><b>.conveyor</b> 440vh with a sticky stage · <b>.track</b> translate3d(−cp × travel) · <b>.slide</b> full-width frames: index column + perspective stage · paintSlide() moves image, ground type, outlined numeral, title, orbit, caption and spec on their own depth planes. Here the catalog scroll drives cp while the stage stays pinned; the pointer tilts the planes.</div>
+  </div>
+
+  <div class="ds-spec">
+    <h3>Ghost form</h3>
+    <div class="ds-scaler" data-max-h="560"><div class="ds-vp" style="width:calc((100vw - var(--rail)) * .6);height:112vh"><div class="transit-visual" style="min-height:100%;height:100%"><span class="transit-note">Lorem ipsum<br>Dolor sit / Amet</span>
+        <div class="transit-rule" aria-hidden="true"></div>
+        <img src="assets/overview/assets/cdn.jsdelivr.net/gh/VanhDc/aura-assets@main/void03/transit-shell-ghost-cutout.png" alt="Complete VOID 03 Transit Shell displayed on an invisible form"><span class="transit-count">03/300</span>
+      </div></div></div>
+    <div class="ds-card ds-meta"><b>.transit-visual img</b> contain, inset 4% 2%, drop-shadow(28px 34px 0 rgba(16,16,16,.16)) · <b>.transit-note</b> DM Mono 9px · <b>.transit-count</b> outlined 800 · the page reveals it with enter-clip-reverse.</div>
+  </div>
+</section>
+
+<!-- ============================================================ 13 content groups -->
+<section class="ds-group" id="components-content">
+  <div class="ds-head"><h2>Content groups</h2><p class="eyebrow">Sections at page scale</p></div>
+
+  <div class="ds-spec">
+    <h3>Hero · launch</h3>
+    <div class="ds-scaler" data-max-h="640" id="ds-hero"><div class="ds-vp"><section class="launch" style="min-height:0;height:100%;border:0">
+      <div class="launch-pin">
+        <div class="launch-copy">
+          <div><span class="eyebrow">LOREM IPSUM / DOLOR 03<br>Sit amet consectetur adipiscing</span>
+            <h1>VOID/03<br><span>DESIGN<br>SYSTEM.</span></h1>
+            <p>Paper-grain grids, outlined display type, and signal red, acid, and cobalt panels that shift with every scroll.</p>
+          </div>
+          <div class="copy-foot eyebrow"><span>Scroll to inspect ↓</span><span>01 / 04</span></div>
+        </div>
+        <div class="launch-visual"><img src="assets/overview/assets/cdn.jsdelivr.net/gh/VanhDc/aura-assets@main/void03/void-crouch-cutout.png" alt="VOID 03 model in a compact crouching hero pose">
+          <div class="poster-stamps">
+            <span class="stamp">Lorem V-03</span><span class="stamp">Ipsum 300 dolor</span><span class="stamp">Sit-amet / 3-elit</span>
+          </div>
+          <div class="product-views" role="group" aria-label="Select product view">
+            <button class="active" data-hero="assets/overview/assets/cdn.jsdelivr.net/gh/VanhDc/aura-assets@main/void03/void-crouch-cutout.png" data-alt="VOID 03 model in a compact crouching pose"><b>01</b><span>Crouch</span></button><button data-hero="assets/overview/assets/cdn.jsdelivr.net/gh/VanhDc/aura-assets@main/void03/void-hero-close-cutout.png" data-alt="Close standing portrait of the VOID 03 shell"><b>02</b><span>Portrait</span></button><button data-hero="https://cdn.jsdelivr.net/gh/VanhDc/aura-assets@main/void03/void-system-padded-cutout.png" data-alt="Technical cord-routing detail of the VOID 03 shell"><b>03</b><span>Detail</span></button>
+          </div>
+        </div>
+      </div>
+    </section></div></div>
+    <button class="bag ds-replay" data-ds-replay="hero">Replay entrance ↻</button>
+    <div class="ds-card ds-meta"><b>.launch-pin</b> sticky under the topbar · <b>.launch-copy</b> 47% | 52% | 68% | 79% over the poster, paper veil · <b>.launch-visual img</b> 72% × 98% contain, drop-shadow(26px 28px 0 rgba(16,16,16,.24)) · entrance body.hero-enter · paintHero() tilts model, title, copy, stamps and numerals with the pointer (and with scroll on the page) · the selector fades to the chosen view (03 loads from the source CDN, as on the page).</div>
+  </div>
+
+    <div class="ds-spec">
+      <h3>Product intro</h3>
+      <div class="ds-bgbox" style="height:auto;background:var(--paper)"><div class="transit-commerce ds-ctx ds-pad" style="display:flex !important;max-width:640px"><span class="eyebrow">Lorem 03 / Ipsum dolorsit</span>
+        <h2>DOLORES<br><span>IPSUM.</span></h2>
+        <p class="transit-intro" style="margin-bottom:0">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt
+          ut labore et dolore magna aliqua, ut enim ad minim veniam quis nostrud.</p></div></div>
+      <div class="ds-card ds-meta"><b>.transit-commerce</b> 12vh 3vw 7vh · eyebrow → h2 (32px 0 28px) → <b>.transit-intro</b> 16px, max-width 370px.</div>
+    </div>
+    <div class="ds-spec">
+      <h3>Index head</h3>
+      <div class="ds-bgbox" style="height:auto"><div class="drop-index ds-ctx ds-pad"><div class="index-head" style="margin:0">
+        <h2>AMET<br>DOLOR.</h2>
+        <p>Lorem ipsum. Dolor sit amet. Consectetur adipiscing elit sed do eiusmod tempor incididunt ut
+          labore.</p>
+      </div></div></div>
+      <div class="ds-card ds-meta"><b>.index-head</b> grid 1fr 1fr, align end, 12vh below (one column under 851px) · h2 + p enter with .reveal.</div>
+    </div>
+
+  <div class="ds-spec">
+    <h3>Laboratory header</h3>
+    <div class="ds-scaler" data-max-h="600"><div class="ds-vp"><section class="workstation system-lab" style="min-height:0;height:100%"><div class="lab-stage" style="min-height:0;height:100%"><img class="lab-image" src="assets/overview/assets/cdn.jsdelivr.net/gh/VanhDc/aura-assets@main/void03/void-system-exploded-wide.png" alt="Exploded top-down laboratory study of the VOID 03 modular apparel system" data-ds-lab>
+        <div class="lab-header"><span class="eyebrow">Lorem ipsum dolor / Sit amet consectetur elit</span>
+          <h2>SED QUIA<br><span>DO-LORE.</span></h2>
+          <p>Lorem ipsum dolor sit amet—consectetur elit. Sed do eiusmod tempor incididunt ut labore et dolore magna,
+            aliqua enim, minim, or veniam nostrud.</p>
+        </div><span class="lab-counter">Archive scan / 03.5</span>
+      </div></section></div></div>
+    <div class="ds-card ds-meta"><b>.lab-header</b> absolute 3vw / 8vh, min(610px, 55vw) · h2 paper + outlined span · <b>.lab-counter</b> top right (bottom right under 601px) · followed by the module dock (Cards and containers).</div>
+  </div>
+
+  <div class="ds-spec">
+    <h3>Finale</h3>
+    <div class="ds-scaler" data-max-h="640"><div class="ds-vp" style="height:100vh"><section class="finale" style="min-height:0;height:100%">
+      <div class="final-left"><span class="eyebrow">Lorem ipsum / Dolor sit amet</span>
+        <h2>ELIT<br><span>SEDO</span>MAGNA.</h2>
+        <p class="eyebrow">300 lorem / Ipsum dolor sit amet<br>Consectetur elit 08.15.26</p>
+      </div>
+      <div class="final-right">
+        <div class="final-number" data-ds-final>03</div>
+        <button class="final-cta"><span>Lorem ipsum<br>dolor</span><b aria-hidden="true">↗</b></button>
+      </div>
+      <footer class="footer">
+        <div class="footer-brand">
+          <strong>VOID/03</strong><span>Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor.</span><small>© 2026 Void System Archive<br>Tokyo / London / Online</small>
+        </div>
+        <nav class="footer-nav" aria-label="Footer explore"><span class="footer-label">Explore</span><a href="#lookbook">Lookbook</a><a href="#product">Transit shell</a><a href="#system">System lab</a><a href="#index">Drop index</a></nav>
+        <nav class="footer-nav" aria-label="Customer service"><span class="footer-label">Service</span><a href="#product">Size guide</a><a href="#product">Shipping &amp; returns</a><a href="#system">Care &amp;
+            repair</a><a href="#product">Material archive</a></nav>
+        <nav class="footer-nav" aria-label="Social and legal"><span class="footer-label">Connect</span><a href="mailto:release@void.system">Email</a><a href="#top">Instagram</a><a href="#top">Are.na</a><a href="#top">Privacy / Terms</a></nav>
+      </footer>
+    </section></div></div>
+    <div class="ds-card ds-meta"><b>.finale</b> 1fr 1fr over the cloth field · <b>.final-left</b> 15vh 3vw, bottom 18vh · <b>.final-number</b> rotates with scroll · <b>.final-cta</b> centered on the numeral · <b>.footer</b> absolute at the foot.</div>
+  </div>
+</section>
+
+</div><!-- /#ds-main -->
+</div><!-- /#view-components -->
+<div class="index-preview" id="ds-preview" aria-hidden="true"><img src="assets/overview/assets/cdn.jsdelivr.net/gh/VanhDc/aura-assets@main/void03/void-hero.png" alt=""></div>
+<script>
+/* components view: specimen behavior. Formulas are the page's own (paintHero, paintSlide, update(),
+   followPointer, the selector / bag / index handlers), scoped to their specimens and driven by the
+   catalog's scroller (#ds-main) instead of window scroll. */
+(function () {
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var clamp = function (n, min, max) { min = min === undefined ? 0 : min; max = max === undefined ? 1 : max; return Math.min(max, Math.max(min, n)); };
+  var RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var body = document.body, view = $('#view-components'), main = $('#ds-main');
+  var on = function () { return body.classList.contains('is-components'); };
+
+  /* specimens are inert as links and forms */
+  main.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('a[href]'); if (a) e.preventDefault(); });
+  main.addEventListener('submit', function (e) { e.preventDefault(); });
+
+  /* ---------------------------------------------------------- page-scale stages */
+  var scalers = $$('.ds-scaler', main), pin = $('#ds-conveyor-pin');
+  function layout() {
+    scalers.forEach(function (sc) {
+      var vp = $('.ds-vp', sc); if (!vp) return;
+      sc.style.width = '';
+      var vw = vp.offsetWidth, vh = vp.offsetHeight, W = sc.clientWidth || sc.parentNode.clientWidth;
+      if (!vw || !vh || !W) return;
+      var maxH = parseFloat(sc.dataset.maxH) || Infinity, k = Math.min(W / vw, maxH / vh);
+      vp.style.setProperty('--k', k);
+      sc.style.height = Math.round(vh * k) + 'px';
+      if (k < W / vw - .001) sc.style.width = Math.round(vw * k) + 'px';
+    });
+    if (pin) { var st = $('.ds-sticky', pin); pin.style.height = Math.round(st.offsetHeight + innerHeight * 1.7) + 'px'; }
+  }
+
+  /* ---------------------------------------------------------- pointer follower (the page's followPointer) */
+  function followPointer(target, draw) {
+    if (target._motionFrame) return;
+    var step = function () {
+      target._px += (target._targetX - target._px) * .18; target._py += (target._targetY - target._py) * .18;
+      target._pointerVelocity += (target._targetVelocity - target._pointerVelocity) * .18;
+      draw(target._pointerVelocity);
+      var moving = Math.abs(target._targetX - target._px) + Math.abs(target._targetY - target._py) + Math.abs(target._targetVelocity - target._pointerVelocity) > .001;
+      if (moving) target._motionFrame = requestAnimationFrame(step);
+      else { target._px = target._targetX; target._py = target._targetY; target._pointerVelocity = target._targetVelocity; target._motionFrame = 0; draw(target._pointerVelocity); }
+    };
+    target._motionFrame = requestAnimationFrame(step);
+  }
+  function arm(t) { t._px = 0; t._py = 0; t._targetX = 0; t._targetY = 0; t._pointerVelocity = 0; t._targetVelocity = 0; t._motionFrame = 0; t._tracking = false; }
+  function track(surface, target, draw, velocity) {
+    arm(target);
+    surface.addEventListener('pointermove', function (e) {
+      if (RM || e.pointerType === 'touch') return;
+      target._tracking = true; var r = surface.getBoundingClientRect();
+      target._targetX = ((e.clientX - r.left) / r.width - .5) * 2; target._targetY = ((e.clientY - r.top) / r.height - .5) * 2;
+      target._targetVelocity = velocity ? velocity() : 0; followPointer(target, draw);
+    });
+    var leave = function () { if (!target._tracking) return; target._tracking = false; target._targetX = 0; target._targetY = 0; target._targetVelocity = 0; followPointer(target, draw); };
+    surface.addEventListener('pointerleave', leave);
+  }
+
+  /* ---------------------------------------------------------- hero surfaces (paintHero) */
+  var ease = function (n) { return n * n * n * (n * (n * 6 - 15) + 10); };
+  function heroVars(visual, p, px, py) {
+    var intro = ease(clamp(p / .3)), build = ease(clamp((p - .12) / .64));
+    visual.style.setProperty('--hero-num-x', (build * -52 + px * 8) + 'px');
+    visual.style.setProperty('--hero-num-y', (intro * 24 + py * 8) + 'px');
+    visual.style.setProperty('--hero-num-scale', 1 + build * .17);
+    visual.style.setProperty('--void-x', (build * 40 + px * 10) + 'px');
+    visual.style.setProperty('--void-y', (build * -22 + py * 8) + 'px');
+  }
+  /* the view's live ground: catalog progress stands in for the pinned hero range */
+  var bgVisual = $('#ds-bg-visual'), bgT = {};
+  function mainP() { var m = main.scrollHeight - main.clientHeight; return m > 0 ? clamp(main.scrollTop / m) : 0; }
+  function paintBg() { heroVars(bgVisual, mainP(), bgT._px || 0, bgT._py || 0); }
+  track(view, bgT, paintBg);
+
+  /* the full hero specimen */
+  var hero = $('#ds-hero'), hVp = $('.ds-vp', hero), hPin = $('.launch-pin', hero), hVis = $('.launch-visual', hero), hImg = $('img', hVis);
+  var hTitle = $('.launch-copy h1', hero), hText = $('.launch-copy p', hero), hEye = $('.launch-copy .eyebrow', hero), hFoot = $('.copy-foot', hero), hStamps = $('.poster-stamps', hero);
+  function paintHero() {
+    var p = 0, px = hPin._px || 0, py = hPin._py || 0;
+    var intro = ease(clamp(p / .3)), build = ease(clamp((p - .12) / .64)), release = ease(clamp((p - .7) / .3));
+    hImg.style.transform = 'translate3d(' + (build * -5 + px * -4) + '%,' + (intro * -2 + release * -3 + py * -3) + '%,80px) scale(' + (1.03 + intro * .04 + build * .08) + ') rotateY(' + (px * 3.5 + build * -1.5) + 'deg) rotateX(' + (py * -2) + 'deg)';
+    hTitle.style.transform = 'translate3d(' + (build * 4.2) + 'vw,' + (build * -16 + release * -8 + py * 7) + 'px,0)'; hTitle.style.opacity = 1 - release * .18;
+    hText.style.transform = 'translate3d(' + (build * 2.1) + 'vw,' + (build * -10 + py * 4) + 'px,0)';
+    hEye.style.transform = 'translate3d(' + (intro * 1.2) + 'vw,' + (intro * -6) + 'px,0)';
+    hFoot.style.transform = 'translate3d(' + (build * -1.5) + 'vw,' + (intro * 7) + 'px,0)';
+    hStamps.style.transform = 'translate3d(' + (build * 34 + px * 15) + 'px,' + (build * -24 + py * 15) + 'px,40px)';
+    hPin.style.setProperty('--hero-progress', p);
+    heroVars(hVis, p, px, py);
+  }
+  track(hPin, hPin, paintHero);
+  $$('.product-views button', hero).forEach(function (b) {
+    b.addEventListener('click', function () {
+      $$('.product-views button', hero).forEach(function (x) { x.classList.remove('active'); }); b.classList.add('active');
+      hImg.style.opacity = '0'; var next = new Image();
+      next.onload = function () { hImg.src = b.dataset.hero; hImg.alt = b.dataset.alt; hImg.style.opacity = '1'; paintHero(); };
+      next.src = b.dataset.hero;
+    });
+  });
+  var heroTimer = 0;
+  function replayHero() {
+    if (RM) return;
+    clearTimeout(heroTimer); hVp.classList.remove('hero-enter'); void hVp.offsetWidth; hVp.classList.add('hero-enter');
+    heroTimer = setTimeout(function () { hVp.classList.remove('hero-enter'); paintHero(); }, 1550);
+  }
+  paintHero();
+
+  window.dsParts = { $: $, $$: $$, clamp: clamp, RM: RM, main: main, layout: layout, track: track, paintBg: paintBg, mainP: mainP, replayHero: replayHero };
+})();
+</script>
+<script>
+(function () {
+  var P = window.dsParts, $ = P.$, $$ = P.$$, clamp = P.clamp, RM = P.RM, main = P.main;
+  var body = document.body, on = function () { return body.classList.contains('is-components'); };
+
+  /* ---------------------------------------------------------- lookbook planes (paintSlide) */
+  function paintSlide(s, local, velocity) {
+    velocity = velocity || 0;
+    var px = s._px || 0, py = s._py || 0, img = $('img', s), back = $('.back-type', s), front = $('.front-type', s), title = $('.slide-title', s),
+      orbit = $('.orbit', s), caption = $('.slide-caption', s), spec = $('.floating-spec', s);
+    if (img) img.style.transform = 'translate3d(' + (local * -7.8 + px * -6) + '%,' + (Math.sin(local) * 4.2 + py * -4.8) + '%,110px) scale(' + (1.025 + velocity * .06) + ') rotateY(' + (px * 5.8) + 'deg) rotateX(' + (py * -3.8) + 'deg)';
+    if (back) back.style.transform = 'translate3d(' + (local * -19 + px * 4.5) + '%,calc(-50% + ' + (Math.sin(local) * 4.5) + 'vh + ' + (py * 19) + 'px),-150px)';
+    if (front) front.style.transform = 'translate3d(' + (local * 16.5 + px * 9.5) + '%,calc(' + (Math.cos(local) * -4.2) + 'vh + ' + (py * 29) + 'px),170px)';
+    if (title) title.style.transform = 'translate3d(' + (local * -10) + 'vw,' + (py * 21) + 'px,85px) translateX(' + (px * 29) + 'px)';
+    if (orbit) { orbit.style.setProperty('--orbit-x', (local * 50 + px * 43) + 'px'); orbit.style.setProperty('--orbit-y', (Math.sin(local) * 24 + py * 32) + 'px'); }
+    if (caption) caption.style.transform = 'translate3d(' + (px * 19) + 'px,' + (py * 19) + 'px,115px)';
+    if (spec) spec.style.transform = 'translate3d(' + (px * 32) + 'px,' + (py * 32) + 'px,180px)';
+  }
+  var slides = $$('[data-ds-slide]', main);
+  slides.forEach(function (s) {
+    s._local = 0; s._velocity = 0;
+    var stage = $('.slide-stage', s);
+    P.track(stage, s, function (v) { paintSlide(s, s._local, v); }, function () { return s._velocity * .35; });
+    paintSlide(s, 0, 0);
+  });
+
+  /* the conveyor: the catalog scroll drives cp while its stage stays pinned (the page's update()) */
+  var pin = $('#ds-conveyor-pin'), conv = $('#ds-conveyor'), trackEl = $('.track', conv), meter = $('.conveyor-meter i', conv),
+    frame = $('[data-ds-frame]', conv), cSlides = $$('.slide', conv), cVp = conv.closest('.ds-vp'), sticky = $('.ds-sticky', pin);
+  var labels = ['Frame 01 — Lorem ipsum', 'Frame 02 — Dolor sit', 'Frame 03 — Amet elit', 'Frame 04 — Sed tempor'], lastTop = 0;
+  function paintConveyor() {
+    var mt = main.getBoundingClientRect().top, r = pin.getBoundingClientRect(), range = pin.offsetHeight - sticky.offsetHeight;
+    var cp = range > 0 ? clamp((mt + 24 - r.top) / range) : 0, travel = Math.max(0, trackEl.scrollWidth - cVp.offsetWidth);
+    trackEl.style.transform = 'translate3d(' + (-cp * travel) + 'px,0,0)';
+    meter.style.transform = 'scaleX(' + (1 + cp * 3) + ')';
+    frame.textContent = labels[Math.min(3, Math.floor(cp * 4))];
+    var velocity = clamp(Math.abs(main.scrollTop - lastTop) / 45, 0, 1);
+    cSlides.forEach(function (s, i) { s._local = cp * 3 - i; s._velocity = velocity; paintSlide(s, s._local, velocity); });
+    lastTop = main.scrollTop;
+  }
+
+  /* laboratory image scale and finale numeral (the page's update()) */
+  var labs = $$('[data-ds-lab]', main), finals = $$('[data-ds-final]', main);
+  function paintScroll() {
+    var h = innerHeight;
+    labs.forEach(function (img) { var sr = img.closest('.ds-scaler').getBoundingClientRect(), sp = clamp((h - sr.top) / (h + sr.height)); img.style.transform = 'translate3d(0,' + ((sp - .5) * -4) + '%,0) scale(' + (1.045 + sp * .035) + ')'; });
+    finals.forEach(function (n) { var fr = n.closest('.ds-scaler').getBoundingClientRect(), fp = clamp((h - fr.top) / (fr.height + h)); n.style.transform = 'translateX(' + ((fp - .5) * -8) + 'vw) rotate(' + ((fp - .5) * 8) + 'deg)'; });
+  }
+
+  /* ---------------------------------------------------------- selectors, bag, index preview (page handlers, per specimen) */
+  function single(sel) {
+    $$(sel, main).forEach(function (b) {
+      b.addEventListener('click', function () { $$('button', b.parentNode).forEach(function (x) { x.classList.remove('active'); }); b.classList.add('active'); });
+    });
+  }
+  single('.size-row button'); single('.colorway button'); single('#components-controls .product-views button');
+  var adds = $$('[data-ds-add]', main);
+  adds.forEach(function (btn) {
+    btn.addEventListener('click', function (e) { var bag = document.querySelector('.bag'); bag.textContent = 'Bag [1]'; e.currentTarget.innerHTML = 'Added to bag <span>✓</span>'; e.currentTarget.style.background = 'var(--blue)'; });
+  });
+  function resetAdd() { adds.forEach(function (b) { b.innerHTML = 'Add to bag <span>→</span>'; b.style.background = ''; }); document.querySelector('.bag').textContent = 'Bag [0]'; }
+  var preview = $('#ds-preview'), previewImg = $('img', preview);
+  $$('#ds-index .index-row').forEach(function (row) {
+    row.addEventListener('pointerenter', function () { previewImg.src = row.dataset.img; preview.classList.add('show'); });
+    row.addEventListener('pointermove', function (e) { preview.style.left = e.clientX + 'px'; preview.style.top = e.clientY + 'px'; });
+    row.addEventListener('pointerleave', function () { preview.classList.remove('show'); });
+  });
+
+  /* ---------------------------------------------------------- entrance gestures */
+  var gest = $('#ds-gestures');
+  function replayGestures() {
+    var ns = $$('.enter, .reveal', gest);
+    ns.forEach(function (n) { n.classList.remove('active'); });
+    void gest.offsetWidth;
+    requestAnimationFrame(function () { requestAnimationFrame(function () { ns.forEach(function (n) { n.classList.add('active'); }); }); });
+  }
+  var once = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { once.unobserve(e.target); replayGestures(); } }); }, { root: main, threshold: .35 });
+  once.observe(gest);
+  var replays = { gestures: replayGestures, hero: P.replayHero, add: resetAdd };
+  $$('[data-ds-replay]', main).forEach(function (b) { b.addEventListener('click', function () { replays[b.dataset.dsReplay](); }); });
+
+  /* ---------------------------------------------------------- sidebar spy + scroll forwarding */
+  var links = $$('#ds-side a'), groups = links.map(function (a) { return document.getElementById(a.getAttribute('href').slice(1)); });
+  function spy() {
+    var y = main.scrollTop + 140, cur = 0;
+    groups.forEach(function (g, i) { if (g && g.offsetTop <= y) cur = i; });
+    links.forEach(function (a, i) { a.classList.toggle('is-current', i === cur); });
+    var c = links[cur]; if (c && c.scrollIntoView && innerWidth < 768) { var s = c.parentNode; s.scrollLeft = c.offsetLeft - 12; }
+  }
+  window.dsSpy = spy;
+  function pass() { if (!on()) return; P.paintBg(); paintConveyor(); paintScroll(); }
+  var queued = false;
+  main.addEventListener('scroll', function () { spy(); if (!queued) { queued = true; requestAnimationFrame(function () { queued = false; pass(); }); } }, { passive: true });
+  addEventListener('resize', function () { if (!on()) return; P.layout(); spy(); pass(); });
+  window.dsBuild = function () { P.layout(); pass(); requestAnimationFrame(function () { P.layout(); pass(); spy(); }); };
+})();
+</script>
+<script>
+/* catalog routing: Overview (default, no hash) | Components (#components, #components-<group>) */
+(function () {
+  var COMPONENTS_ENABLED = true;
+  var body = document.body, frame = document.getElementById('overview-frame');
+  var linkO = document.getElementById('nav-overview'), linkC = document.getElementById('nav-components');
+  var bar = document.getElementById('ds-progress'), bag = document.getElementById('ds-bag');
+  var main = document.getElementById('ds-main');
+  var mode = 'overview', fp = 0;
+  var isComp = function (h) { return h === '#components' || h.indexOf('#components-') === 0; };
+  if (!COMPONENTS_ENABLED) { linkC.setAttribute('aria-disabled', 'true'); linkC.tabIndex = -1; }
+
+  /* the page's progress bar: scaleX(scrollY / max) — of the Overview frame, or of the Components scroller */
+  function mainP() { if (!main) return 0; var m = main.scrollHeight - main.clientHeight; return m > 0 ? Math.min(1, main.scrollTop / m) : 0; }
+  function paintBar() { bar.style.transform = 'scaleX(' + (mode === 'components' ? mainP() : fp) + ')'; }
+  function post(m) { try { frame.contentWindow.postMessage(m, '*'); } catch (e) {} }
+
+  function route() {
+    var h = location.hash;
+    if (h === '#overview') { history.replaceState(null, '', location.pathname + location.search); h = ''; }
+    if (isComp(h) && !COMPONENTS_ENABLED) { history.replaceState(null, '', location.pathname + location.search); h = ''; }
+    var comp = isComp(h);
+    mode = comp ? 'components' : 'overview';
+    body.classList.toggle('is-components', comp);
+    linkO.classList.toggle('is-active', !comp);
+    linkC.classList.toggle('is-active', comp);
+    if (comp) { linkC.setAttribute('aria-current', 'page'); linkO.removeAttribute('aria-current'); }
+    else { linkO.setAttribute('aria-current', 'page'); linkC.removeAttribute('aria-current'); }
+    paintBar();
+    if (!comp) return;
+    if (window.dsBuild) window.dsBuild();
+    if (h === '#components') main.scrollTop = 0;
+    else { var el = document.getElementById(h.slice(1)); if (el) main.scrollTop = el.offsetTop - 24; }
+    if (window.dsSpy) window.dsSpy();
+  }
+
+  /* Overview is the default view and carries no hash */
+  linkO.addEventListener('click', function (e) {
+    e.preventDefault();
+    if (mode !== 'overview') { history.pushState(null, '', location.pathname + location.search); route(); }
+  });
+  /* the rail's "V/" mark goes back to the top of the Overview, as on the page (#top) */
+  document.getElementById('ds-home').addEventListener('click', function (e) {
+    e.preventDefault();
+    if (mode !== 'overview') { history.pushState(null, '', location.pathname + location.search); route(); }
+    post({ ds: 'top' });
+  });
+
+  addEventListener('message', function (e) {
+    if (e.source !== frame.contentWindow || !e.data) return;
+    var d = e.data;
+    if (d.ds === 'ready') body.classList.add('ds-overview-ready');
+    else if (d.ds === 'scroll') { fp = d.p || 0; if (mode === 'overview') paintBar(); }
+    else if (d.ds === 'bag') bag.textContent = d.t;
+  });
+  if (main) main.addEventListener('scroll', function () { if (mode === 'components') paintBar(); }, { passive: true });
+
+  addEventListener('hashchange', route);
+  addEventListener('popstate', route);
+  route();
+})();
+</script>
+</body>
+</html>
